@@ -238,7 +238,9 @@ export default function Page() {
         <div className={'tab' + (tab === 'glue' ? ' active' : '')} onClick={() => setTab('glue')}>Glue / Viz</div>
         <div className={'tab' + (tab === 'punch' ? ' active' : '')} onClick={() => setTab('punch')}>Punch + Fastener</div>
       </div>
-      {tab === 'glue' ? <Tab mode="glue" ctrls={GLUE} /> : <Tab mode="punch" ctrls={PUNCH} />}
+      {tab === 'glue'
+        ? <Tab key="glue" mode="glue" ctrls={GLUE} />
+        : <Tab key="punch" mode="punch" ctrls={PUNCH} />}
     </div>
   );
 }
