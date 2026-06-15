@@ -93,15 +93,6 @@ function coerce(ctrl: Ctrl, raw: any) {
   }
 }
 
-function PdfPreview({ title, src }: { title: string; src?: string }) {
-  if (!src) return null;
-  return (
-    <section className="preview-panel">
-      <div className="preview-topline">{title}</div>
-      <iframe className="preview-frame" src={src} title={title} />
-    </section>
-  );
-}
 
 function Field({
   ctrl,
@@ -153,6 +144,7 @@ function Tab({ mode, ctrls }: { mode: 'glue' | 'punch'; ctrls: Ctrl[] }) {
   const [busy, setBusy] = useState(false);
   const [out, setOut] = useState<OutputState>({});
   const [inputUrl, setInputUrl] = useState<string>();
+  const [previewTab, setPreviewTab] = useState<'input' | 'body' | 'cover'>('input');
 
   const set = (group: string, value: any) => setVals((current) => ({ ...current, [group]: value }));
 
@@ -163,6 +155,7 @@ function Tab({ mode, ctrls }: { mode: 'glue' | 'punch'; ctrls: Ctrl[] }) {
     }
     const url = URL.createObjectURL(file);
     setInputUrl(url);
+    setPreviewTab('input');
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
@@ -202,6 +195,7 @@ function Tab({ mode, ctrls }: { mode: 'glue' | 'punch'; ctrls: Ctrl[] }) {
         splashPage: result.splashPage,
         mode,
       });
+      setPreviewTab('body');
     } catch (error: any) {
       setOut({ err: error?.message || String(error) });
     } finally {
@@ -285,7 +279,7 @@ function Tab({ mode, ctrls }: { mode: 'glue' | 'punch'; ctrls: Ctrl[] }) {
             <p>{out.err}</p>
           </div>
         ) : out.summary ? (
-          <>
+          <div className="results-meta">
             <div className="metrics">
               <div className="metric">
                 <span className="metric-value">{out.summary.sourcePages}</span>
@@ -305,33 +299,6 @@ function Tab({ mode, ctrls }: { mode: 'glue' | 'punch'; ctrls: Ctrl[] }) {
               </div>
             </div>
 
-            <div className="summary-list">
-              <div className="summary-row">
-                <span>Layout</span>
-                <strong>
-                  {(out.summary.trimW / MM).toFixed(0)} x {(out.summary.trimH / MM).toFixed(0)} mm
-                </strong>
-              </div>
-              <div className="summary-row">
-                <span>Gutter</span>
-                <strong>{(out.summary.gutter / MM).toFixed(1)} mm</strong>
-              </div>
-              <div className="summary-row">
-                <span>Body PDF</span>
-                <strong>{out.summary.sides} sheet sides</strong>
-              </div>
-              <div className="summary-row">
-                <span>Spread pages</span>
-                <strong>{out.summary.spreads.length ? out.summary.spreads.join(', ') : 'None detected'}</strong>
-              </div>
-              {out.splashPage ? (
-                <div className="summary-row">
-                  <span>Closing splash</span>
-                  <strong>Body page {out.splashPage}</strong>
-                </div>
-              ) : null}
-            </div>
-
             <div className="downloads">
               <a className="dl" href={out.body} download={`${base}_booklet.pdf`}>
                 Download body PDF
@@ -348,18 +315,44 @@ function Tab({ mode, ctrls }: { mode: 'glue' | 'punch'; ctrls: Ctrl[] }) {
                 ? 'Print odds, then evens reversed, short-edge flip. Fold, glue spine, stack-cut to trim.'
                 : 'Print odds, then evens reversed, short-edge flip. Fold, punch the guide ticks, then fasten.'}
             </div>
-
-            <div className="preview-stack">
-              <PdfPreview title="Input preview" src={inputUrl} />
-              <PdfPreview title="Body preview" src={out.body} />
-              <PdfPreview title="Cover preview" src={out.cover} />
-            </div>
-          </>
+          </div>
         ) : (
           <div className="empty-state">
             <div className="empty-title">Ready for a source PDF</div>
             <p>Load a book, tune the layout, and generate press-ready output with live previews.</p>
-            <PdfPreview title="Input preview" src={inputUrl} />
+          </div>
+        )}
+
+        {(inputUrl || out.body) && (
+          <div className="preview-viewer">
+            <div className="preview-tabs">
+              <button
+                className={'preview-tab' + (previewTab === 'input' ? ' active' : '')}
+                onClick={() => setPreviewTab('input')}
+                disabled={!inputUrl}
+              >
+                Input
+              </button>
+              <button
+                className={'preview-tab' + (previewTab === 'body' ? ' active' : '')}
+                onClick={() => setPreviewTab('body')}
+                disabled={!out.body}
+              >
+                Body PDF
+              </button>
+              <button
+                className={'preview-tab' + (previewTab === 'cover' ? ' active' : '')}
+                onClick={() => setPreviewTab('cover')}
+                disabled={!out.cover}
+              >
+                Cover PDF
+              </button>
+            </div>
+            <iframe
+              className="preview-frame"
+              src={previewTab === 'input' ? inputUrl : previewTab === 'body' ? out.body : out.cover}
+              title={previewTab}
+            />
           </div>
         )}
       </section>

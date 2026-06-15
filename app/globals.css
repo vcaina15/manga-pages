@@ -1,4 +1,5 @@
 :root {
+  --hero-h: 112px;
   --bg: #111318;
   --bg-elevated: #171a21;
   --bg-soft: #1d212b;
@@ -133,6 +134,7 @@ h1 {
   display: grid;
   grid-template-columns: minmax(360px, 460px) minmax(0, 1fr);
   gap: 20px;
+  align-items: start;
 }
 
 .config-panel,
@@ -146,10 +148,26 @@ h1 {
 
 .config-panel {
   padding: 22px 22px 20px;
+  position: sticky;
+  top: calc(var(--hero-h) + 16px);
+  max-height: calc(100vh - var(--hero-h) - 48px);
+  overflow-y: auto;
 }
 
 .results-panel {
   padding: 22px;
+  position: sticky;
+  top: calc(var(--hero-h) + 16px);
+  height: calc(100vh - var(--hero-h) - 48px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.results-meta {
+  flex-shrink: 0;
+  overflow-y: auto;
+  max-height: 280px;
 }
 
 .panel-head {
@@ -422,34 +440,59 @@ h1 {
   line-height: 1.5;
 }
 
-.preview-stack {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.preview-panel {
-  min-width: 0;
+.preview-viewer {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   border: 1px solid var(--line);
   border-radius: 16px;
   overflow: hidden;
   background: #0f1218;
+  margin-top: 16px;
 }
 
-.preview-topline {
-  padding: 12px 14px;
+.preview-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.preview-tab {
+  padding: 6px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
   color: var(--muted);
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 120ms ease;
+}
+
+.preview-tab:hover:not(:disabled) {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.preview-tab.active {
+  color: var(--text);
+  background: var(--accent-soft);
+  border-color: rgba(241, 101, 66, 0.35);
+}
+
+.preview-tab:disabled {
+  opacity: 0.3;
+  cursor: default;
 }
 
 .preview-frame {
   display: block;
   width: 100%;
-  height: 480px;
+  flex: 1;
+  min-height: 0;
   border: 0;
   background: #111;
 }
@@ -458,7 +501,6 @@ h1 {
   display: grid;
   gap: 16px;
   align-content: start;
-  min-height: 100%;
   padding: 10px 0 0;
 }
 
@@ -481,6 +523,18 @@ h1 {
 @media (max-width: 1120px) {
   .workspace {
     grid-template-columns: 1fr;
+  }
+
+  .config-panel,
+  .results-panel {
+    position: static;
+    max-height: none;
+    height: auto;
+    overflow: visible;
+  }
+
+  .results-panel {
+    overflow: hidden;
   }
 
   .hero {
