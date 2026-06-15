@@ -246,6 +246,10 @@ function Tab({ mode, ctrls }: { mode: 'glue' | 'punch'; ctrls: Ctrl[] }) {
           />
         </div>
 
+        <div className="tool-notice">
+          This tool uses single-sheet signatures only: 4 imposed pages per folded sheet.
+        </div>
+
         {rows.map((group, index) => (
           <section key={index} className="control-section">
             {group.section && <div className="section-kicker">{group.section}</div>}
