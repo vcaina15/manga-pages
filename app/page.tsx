@@ -85,7 +85,10 @@ function Tab({ mode, ctrls }: { mode: 'glue' | 'punch'; ctrls: Ctrl[] }) {
       const bytes = new Uint8Array(await file.arrayBuffer());
       const r = await impose(bytes, opts as ImposeOptions);
 
-      const mk = (b: Uint8Array) => URL.createObjectURL(new Blob([b], { type: 'application/pdf' }));
+      const mk = (b: Uint8Array) => {
+        const pdfBytes = b.slice();
+        return URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }));
+      };
       const s = r.summary;
       const sp = s.spreads.length
         ? `Spreads: ${s.spreads.length} split -> pages ${s.spreads.join(', ')}` +

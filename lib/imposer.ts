@@ -36,11 +36,24 @@ export interface ImposeResult {
   };
 }
 
+type SequenceItem =
+  | { kind: 'blank' }
+  | { kind: 'page'; idx: number }
+  | { kind: 'half'; idx: number; which: 'left' | 'right' };
+
+type SheetSlot = number | null;
+type SheetSide = [SheetSlot, SheetSlot];
+type SheetLayout = [SheetSide, SheetSide];
+
 // Build the reading sequence with spread splitting + facing alignment.
-function buildSequence(sizes, o) {
+function buildSequence(sizes: Array<{ w: number; h: number }>, o: ImposeOptions) {
   const bodyFirst = o.coverAsSeparate ? 1 : 0;
-  const seq = [];                 // {kind:'page'|'half'|'blank', idx?, which?}
-  const stats = { spreads: [], alignBlanks: 0, padBlanks: 0 };
+  const seq: SequenceItem[] = [];
+  const stats: { spreads: number[]; alignBlanks: number; padBlanks: number } = {
+    spreads: [],
+    alignBlanks: 0,
+    padBlanks: 0,
+  };
   for (let idx = bodyFirst; idx < sizes.length; idx++) {
     const { w, h } = sizes[idx];
     if (o.splitSpreads && h > 0 && w / h >= o.spreadDetectAspect) {
@@ -56,7 +69,7 @@ function buildSequence(sizes, o) {
   while (seq.length % 4 !== 0) seq.push({ kind: 'blank' });
   stats.padBlanks = seq.length - beforePad;
 
-  let coverPos = null;
+  let coverPos: number | null = null;
   if (o.appendCoverEnd) {
     coverPos = seq.length + 2;
     seq.push({ kind: 'blank' }, { kind: 'blank' },
@@ -66,8 +79,8 @@ function buildSequence(sizes, o) {
 }
 
 // RTL single-sheet signatures: side A = [p0|p3], side B = [p2|p1] (left|right)
-function rtlSheets(total) {
-  const sheets = [];
+function rtlSheets(total: number): SheetLayout[] {
+  const sheets: SheetLayout[] = [];
   for (let s = 0; s < total; s += 4) {
     const p = [0, 1, 2, 3].map(i => (s + i < total ? s + i : null));
     sheets.push([[p[0], p[3]], [p[2], p[1]]]);
@@ -173,10 +186,10 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
   const sizes = src.getPages().map(p => ({ w: p.getWidth(), h: p.getHeight() }));
 
   // effective trim height (glue + match aspect)
-  let effTrimH = o.trimH;
+  let effTrimH = o.trimH ?? 0;
   if (o.mode === 'glue' && o.matchPageAspect) {
     const rep = sizes[(o.coverAsSeparate && n > 1) ? 1 : 0];
-    effTrimH = o.trimW * rep.h / rep.w;
+    effTrimH = (o.trimW ?? 0) * rep.h / rep.w;
   }
   const S = { ...o, effTrimH };
 
@@ -207,7 +220,7 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
   // ---- body ----
   const body = await PDFDocument.create();
   const bodyCache = new Map();
-  let splashPage = null;
+  let splashPage: number | null = null;
   const sheets = rtlSheets(padded);
   for (const [[aL, aR], [bL, bR]] of sheets) {
     for (const [lpos, rpos] of [[aL, aR], [bL, bR]]) {
@@ -226,7 +239,7 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
   const bodyBytes = await body.save();
 
   // ---- cover ----
-  let coverBytes = null;
+  let coverBytes: Uint8Array | null = null;
   if (o.coverAsSeparate) {
     const cov = await PDFDocument.create();
     const cache = new Map();
@@ -248,7 +261,7 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
       sourcePages: n, sheets: padded / 4, sides, imposedPages: padded,
       blanks: stats.padBlanks + stats.alignBlanks,
       spreads: stats.spreads, alignBlanks: stats.alignBlanks,
-      trimW: S.trimW, trimH: effTrimH, gutter: S.gutter, mode: o.mode,
+      trimW: S.trimW ?? 0, trimH: effTrimH, gutter: S.gutter, mode: o.mode,
     },
   };
 }
