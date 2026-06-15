@@ -188,7 +188,10 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
   // effective trim height (glue + match aspect)
   let effTrimH = o.trimH ?? 0;
   if (o.mode === 'glue' && o.matchPageAspect) {
-    const rep = sizes[(o.coverAsSeparate && n > 1) ? 1 : 0];
+    const bodyFirst = (o.coverAsSeparate && n > 1) ? 1 : 0;
+    const rep =
+      sizes.slice(bodyFirst).find(({ w, h }) => h >= w && w > 0) ??
+      sizes[bodyFirst];
     effTrimH = (o.trimW ?? 0) * rep.h / rep.w;
   }
   const S = { ...o, effTrimH };
