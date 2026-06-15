@@ -11,6 +11,7 @@ export interface ImposeOptions {
   // glue
   trimW?: number; trimH?: number; matchPageAspect?: boolean;
   fitMode?: 'fit' | 'fill'; fillZoom?: number;
+  coverFitMode?: 'fit' | 'fill'; coverFillZoom?: number;
   landscapeMode?: 'rotate' | 'fit_width' | 'none'; landscapeRotate?: 'cw' | 'ccw';
   // punch
   bleed?: number; maxEdgeCrop?: number;
@@ -247,11 +248,16 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
     const cov = await PDFDocument.create();
     const cache = new Map();
     const page = cov.addPage([S.sheetW, S.sheetH]);
+    const covS = {
+      ...S,
+      fitMode: o.coverFitMode ?? S.fitMode,
+      fillZoom: o.coverFillZoom ?? S.fillZoom,
+    };
     const front = await embedFor(cov, { kind: 'page', idx: o.coverSrcIndex }, cache);
-    place(page, front, 'left', S);
+    placeGlue(page, front, 'left', covS);
     if (o.backCoverSrcIndex !== null && o.backCoverSrcIndex !== undefined) {
       const back = await embedFor(cov, { kind: 'page', idx: o.backCoverSrcIndex }, cache);
-      place(page, back, 'right', S);
+      placeGlue(page, back, 'right', covS);
     }
     drawGuides(page, S);
     coverBytes = await cov.save();

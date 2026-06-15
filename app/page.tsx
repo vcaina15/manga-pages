@@ -31,6 +31,8 @@ const GLUE: Ctrl[] = [
   { g: 'matchPageAspect', label: 'Match page aspect', kind: 'bool', def: true, hint: 'Auto height from source pages' },
   { g: 'fitMode', label: 'Fit mode', kind: 'choice', def: 'fit', choices: ['fit', 'fill'], hint: 'Inside box or cover + crop' },
   { g: 'fillZoom', label: 'Fill zoom', kind: 'float', def: 1.02, factor: 1, hint: 'Fill only' },
+  { g: 'coverFitMode', label: 'Cover fit mode', kind: 'choice', def: 'fill', choices: ['fit', 'fill'], hint: 'Cover sheet only' },
+  { g: 'coverFillZoom', label: 'Cover fill zoom', kind: 'float', def: 1.02, factor: 1, hint: 'Cover fill only' },
   { g: 'gutter', label: 'Gutter', kind: 'float', def: 14, factor: MM, hint: 'mm' },
   { g: 'vOffset', label: 'Vertical offset', kind: 'float', def: 0, factor: MM, hint: 'mm' },
   { g: 'splitSpreads', label: 'Split spreads', kind: 'bool', def: true, hint: 'Detect and split wide pages', section: 'Spreads' },
