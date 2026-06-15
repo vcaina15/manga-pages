@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { impose, ImposeOptions, MM, CM, INCH } from '@/lib/imposer';
 
 type Kind = 'float' | 'bool' | 'choice' | 'index' | 'index_opt';
@@ -68,13 +68,41 @@ function coerce(c: Ctrl, raw: any) {
   }
 }
 
+function PdfPreview({ title, src }: { title: string; src?: string }) {
+  if (!src) return null;
+  return (
+    <div className="preview-card">
+      <div className="preview-title">{title}</div>
+      <iframe className="preview-frame" src={src} title={title} />
+    </div>
+  );
+}
+
 function Tab({ mode, ctrls }: { mode: 'glue' | 'punch'; ctrls: Ctrl[] }) {
   const [vals, setVals] = useState<Record<string, any>>(() => defaults(ctrls));
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [out, setOut] = useState<{ body?: string; cover?: string; text?: string; err?: string }>({});
+  const [inputUrl, setInputUrl] = useState<string>();
 
   const set = (g: string, v: any) => setVals(s => ({ ...s, [g]: v }));
+
+  useEffect(() => {
+    if (!file) {
+      setInputUrl(undefined);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setInputUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  useEffect(() => {
+    return () => {
+      if (out.body) URL.revokeObjectURL(out.body);
+      if (out.cover) URL.revokeObjectURL(out.cover);
+    };
+  }, [out.body, out.cover]);
 
   async function run() {
     if (!file) { setOut({ err: 'Choose an input PDF first.' }); return; }
@@ -104,6 +132,8 @@ function Tab({ mode, ctrls }: { mode: 'glue' | 'punch'; ctrls: Ctrl[] }) {
           ? 'Print: odds, then evens REVERSED, short-edge flip. Fold, glue spine, stack-cut to box.'
           : 'Print: odds, then evens REVERSED, short-edge flip. Fold, punch the two ticks, bind with fasteners.');
 
+      if (out.body) URL.revokeObjectURL(out.body);
+      if (out.cover) URL.revokeObjectURL(out.cover);
       setOut({ body: mk(r.bodyBytes), cover: r.coverBytes ? mk(r.coverBytes) : undefined, text });
     } catch (e: any) {
       setOut({ err: e?.message || String(e) });
@@ -132,6 +162,8 @@ function Tab({ mode, ctrls }: { mode: 'glue' | 'punch'; ctrls: Ctrl[] }) {
         <input type="file" accept="application/pdf"
           onChange={e => setFile(e.target.files?.[0] ?? null)} />
       </div>
+
+      <PdfPreview title="Input preview" src={inputUrl} />
 
       {rows.map((grp, i) => (
         <div key={i}>
@@ -180,6 +212,10 @@ function Tab({ mode, ctrls }: { mode: 'glue' | 'punch'; ctrls: Ctrl[] }) {
                 <div className="downloads">
                   <a className="dl" href={out.body} download={`${base}_booklet.pdf`}>Download body PDF</a>
                   {out.cover && <a className="dl" href={out.cover} download={`${base}_cover.pdf`}>Download cover PDF</a>}
+                </div>
+                <div className="preview-grid">
+                  <PdfPreview title="Body preview" src={out.body} />
+                  <PdfPreview title="Cover preview" src={out.cover} />
                 </div>
                 <p className="note">Tip: print at 100% / actual size. Body grayscale, cover in color on photo paper.</p>
               </>}
