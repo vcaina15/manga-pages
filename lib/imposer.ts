@@ -248,16 +248,15 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
     const cov = await PDFDocument.create();
     const cache = new Map();
     const page = cov.addPage([S.sheetW, S.sheetH]);
-    const covS = {
-      ...S,
-      fitMode: o.coverFitMode ?? S.fitMode,
-      fillZoom: o.coverFillZoom ?? S.fillZoom,
-    };
+    const covS = o.mode === 'glue'
+      ? { ...S, fitMode: o.coverFitMode ?? S.fitMode, fillZoom: o.coverFillZoom ?? S.fillZoom }
+      : S;
+    const coverPlace = o.mode === 'glue' ? placeGlue : placePunch;
     const front = await embedFor(cov, { kind: 'page', idx: o.coverSrcIndex }, cache);
-    placeGlue(page, front, 'left', covS);
+    coverPlace(page, front, 'left', covS);
     if (o.backCoverSrcIndex !== null && o.backCoverSrcIndex !== undefined) {
       const back = await embedFor(cov, { kind: 'page', idx: o.backCoverSrcIndex }, cache);
-      placeGlue(page, back, 'right', covS);
+      coverPlace(page, back, 'right', covS);
     }
     drawGuides(page, S);
     coverBytes = await cov.save();
