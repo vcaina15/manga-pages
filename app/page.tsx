@@ -373,11 +373,13 @@ export default function Page() {
       <header className="hero">
         <div className="hero-copy">
           <div className="eyebrow">Manga booklet imposer</div>
-          <h1>Prepare printable manga booklets without leaving the browser.</h1>
-          <p className="sub">
-            Right-to-left imposition with spread splitting, standalone covers, and print-oriented output for glue or
-            fastener binding.
-          </p>
+          <div className="hero-title-row">
+            <h1>Prepare printable manga booklets without leaving the browser.</h1>
+            <p className="sub">
+              Right-to-left imposition with spread splitting, standalone covers, and print-oriented output for glue or
+              fastener binding.
+            </p>
+          </div>
         </div>
 
         <div className="mode-switch" role="tablist" aria-label="Binding mode">

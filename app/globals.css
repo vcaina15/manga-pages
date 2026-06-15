@@ -66,6 +66,13 @@ button {
   max-width: 760px;
 }
 
+.hero-title-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.9fr);
+  align-items: start;
+  gap: 24px;
+}
+
 .eyebrow {
   color: var(--accent-strong);
   font-size: 12px;
@@ -82,8 +89,7 @@ h1 {
 }
 
 .sub {
-  margin: 0;
-  max-width: 680px;
+  margin: 12px 0 0;
   color: var(--muted);
   font-size: 15px;
   line-height: 1.6;
@@ -480,6 +486,11 @@ h1 {
   .hero {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .hero-title-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .mode-switch {
