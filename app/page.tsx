@@ -1,31 +1,47 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { impose, ImposeOptions, MM, CM, INCH } from '@/lib/imposer';
+import { impose, ImposeOptions, ImposeResult, MM, CM, INCH } from '@/lib/imposer';
 
 type Kind = 'float' | 'bool' | 'choice' | 'index' | 'index_opt';
+
 interface Ctrl {
-  g: string; label: string; kind: Kind; def: any;
-  factor?: number; choices?: string[]; hint?: string; section?: string;
+  g: string;
+  label: string;
+  kind: Kind;
+  def: any;
+  factor?: number;
+  choices?: string[];
+  hint?: string;
+  section?: string;
 }
+
+type OutputState = {
+  body?: string;
+  cover?: string;
+  err?: string;
+  summary?: ImposeResult['summary'];
+  splashPage?: number | null;
+  mode?: 'glue' | 'punch';
+};
 
 const GLUE: Ctrl[] = [
   { g: 'trimW', label: 'Trim width', kind: 'float', def: 127, factor: MM, hint: 'mm', section: 'Page & fit' },
-  { g: 'trimH', label: 'Trim height', kind: 'float', def: 190, factor: MM, hint: 'mm (used if Match aspect off)' },
-  { g: 'matchPageAspect', label: 'Match page aspect', kind: 'bool', def: true, hint: 'box height from your scans' },
-  { g: 'fitMode', label: 'Fit mode', kind: 'choice', def: 'fit', choices: ['fit', 'fill'], hint: 'fit = inside; fill = cover+crop' },
-  { g: 'fillZoom', label: 'Fill zoom', kind: 'float', def: 1.02, factor: 1, hint: 'fill only; >1 crops more' },
-  { g: 'gutter', label: 'Gutter', kind: 'float', def: 14, factor: MM, hint: 'mm (glue)' },
-  { g: 'vOffset', label: 'Vertical offset', kind: 'float', def: 0, factor: MM, hint: 'mm (+up/-down)' },
-  { g: 'splitSpreads', label: 'Split spreads', kind: 'bool', def: true, hint: 'detect + split spreads', section: 'Spreads' },
+  { g: 'trimH', label: 'Trim height', kind: 'float', def: 190, factor: MM, hint: 'mm' },
+  { g: 'matchPageAspect', label: 'Match page aspect', kind: 'bool', def: true, hint: 'Auto height from source pages' },
+  { g: 'fitMode', label: 'Fit mode', kind: 'choice', def: 'fit', choices: ['fit', 'fill'], hint: 'Inside box or cover + crop' },
+  { g: 'fillZoom', label: 'Fill zoom', kind: 'float', def: 1.02, factor: 1, hint: 'Fill only' },
+  { g: 'gutter', label: 'Gutter', kind: 'float', def: 14, factor: MM, hint: 'mm' },
+  { g: 'vOffset', label: 'Vertical offset', kind: 'float', def: 0, factor: MM, hint: 'mm' },
+  { g: 'splitSpreads', label: 'Split spreads', kind: 'bool', def: true, hint: 'Detect and split wide pages', section: 'Spreads' },
   { g: 'spreadDetectAspect', label: 'Spread detect aspect', kind: 'float', def: 1.2, factor: 1, hint: 'w/h cutoff' },
-  { g: 'landscapeMode', label: 'Landscape mode', kind: 'choice', def: 'rotate', choices: ['rotate', 'fit_width', 'none'], hint: 'wide pages when split off' },
+  { g: 'landscapeMode', label: 'Landscape mode', kind: 'choice', def: 'rotate', choices: ['rotate', 'fit_width', 'none'], hint: 'For wide pages when not split' },
   { g: 'landscapeRotate', label: 'Landscape rotate', kind: 'choice', def: 'cw', choices: ['cw', 'ccw'] },
-  { g: 'coverAsSeparate', label: 'Separate cover', kind: 'bool', def: true, hint: 'cover -> own PDF', section: 'Cover' },
+  { g: 'coverAsSeparate', label: 'Separate cover', kind: 'bool', def: true, hint: 'Generate a standalone cover PDF', section: 'Cover' },
   { g: 'coverSrcIndex', label: 'Front cover page #', kind: 'index', def: 1, hint: '1-based' },
-  { g: 'backCoverSrcIndex', label: 'Back cover page #', kind: 'index_opt', def: '', hint: 'blank = blank back' },
+  { g: 'backCoverSrcIndex', label: 'Back cover page #', kind: 'index_opt', def: '', hint: 'Blank leaves it empty' },
   { g: 'appendCoverEnd', label: 'Append end splash', kind: 'bool', def: false },
-  { g: 'drawGuides', label: 'Draw guides', kind: 'bool', def: true, section: 'Guides' },
+  { g: 'drawGuides', label: 'Draw guides', kind: 'bool', def: true, hint: 'Stamp print guides', section: 'Guides' },
   { g: 'foldCutLine', label: 'Fold/cut line', kind: 'bool', def: true },
   { g: 'trimGuides', label: 'Trim box + crop marks', kind: 'bool', def: true },
   { g: 'cropMarkLen', label: 'Crop mark length', kind: 'float', def: 4, factor: MM, hint: 'mm' },
@@ -35,46 +51,97 @@ const GLUE: Ctrl[] = [
 ];
 
 const PUNCH: Ctrl[] = [
-  { g: 'gutter', label: 'Gutter', kind: 'float', def: 1.5, factor: INCH, hint: 'in (fastener)', section: 'Layout' },
+  { g: 'gutter', label: 'Gutter', kind: 'float', def: 1.5, factor: INCH, hint: 'in', section: 'Layout' },
   { g: 'bleed', label: 'Bleed', kind: 'float', def: 0.04, factor: INCH, hint: 'in' },
-  { g: 'maxEdgeCrop', label: 'Max edge crop', kind: 'float', def: 0, factor: INCH, hint: 'in; 0 = none' },
-  { g: 'vOffset', label: 'Vertical offset', kind: 'float', def: 0, factor: INCH, hint: 'in (+up/-down)' },
-  { g: 'splitSpreads', label: 'Split spreads', kind: 'bool', def: true, hint: 'detect + split spreads', section: 'Spreads' },
+  { g: 'maxEdgeCrop', label: 'Max edge crop', kind: 'float', def: 0, factor: INCH, hint: 'in' },
+  { g: 'vOffset', label: 'Vertical offset', kind: 'float', def: 0, factor: INCH, hint: 'in' },
+  { g: 'splitSpreads', label: 'Split spreads', kind: 'bool', def: true, hint: 'Detect and split wide pages', section: 'Spreads' },
   { g: 'spreadDetectAspect', label: 'Spread detect aspect', kind: 'float', def: 1.2, factor: 1, hint: 'w/h cutoff' },
-  { g: 'coverAsSeparate', label: 'Separate cover', kind: 'bool', def: true, hint: 'cover -> own PDF', section: 'Cover' },
+  { g: 'coverAsSeparate', label: 'Separate cover', kind: 'bool', def: true, hint: 'Generate a standalone cover PDF', section: 'Cover' },
   { g: 'coverSrcIndex', label: 'Front cover page #', kind: 'index', def: 1, hint: '1-based' },
-  { g: 'backCoverSrcIndex', label: 'Back cover page #', kind: 'index_opt', def: '', hint: 'blank = blank back' },
+  { g: 'backCoverSrcIndex', label: 'Back cover page #', kind: 'index_opt', def: '', hint: 'Blank leaves it empty' },
   { g: 'appendCoverEnd', label: 'Append end splash', kind: 'bool', def: false },
-  { g: 'drawGuides', label: 'Draw guides', kind: 'bool', def: true, section: 'Guides' },
+  { g: 'drawGuides', label: 'Draw guides', kind: 'bool', def: true, hint: 'Stamp print guides', section: 'Guides' },
   { g: 'foldCutLine', label: 'Fold/cut line', kind: 'bool', def: true },
-  { g: 'punchSpacing', label: 'Punch spacing', kind: 'float', def: 12, factor: CM, hint: 'cm between holes' },
+  { g: 'punchSpacing', label: 'Punch spacing', kind: 'float', def: 12, factor: CM, hint: 'cm' },
   { g: 'guideGray', label: 'Guide gray', kind: 'float', def: 0.6, factor: 1, hint: '0..1' },
   { g: 'guideWidth', label: 'Guide width', kind: 'float', def: 0.5, factor: 1, hint: 'pt' },
 ];
 
 function defaults(ctrls: Ctrl[]) {
-  const o: Record<string, any> = {};
-  ctrls.forEach(c => (o[c.g] = c.kind === 'bool' ? c.def : String(c.def)));
-  return o;
+  const output: Record<string, any> = {};
+  ctrls.forEach((ctrl) => {
+    output[ctrl.g] = ctrl.kind === 'bool' ? ctrl.def : String(ctrl.def);
+  });
+  return output;
 }
 
-function coerce(c: Ctrl, raw: any) {
-  switch (c.kind) {
-    case 'bool': return !!raw;
-    case 'choice': return String(raw);
-    case 'index': return Math.round(parseFloat(raw)) - 1;
-    case 'index_opt': return String(raw).trim() === '' ? null : Math.round(parseFloat(raw)) - 1;
-    default: return parseFloat(raw) * (c.factor ?? 1);
+function coerce(ctrl: Ctrl, raw: any) {
+  switch (ctrl.kind) {
+    case 'bool':
+      return !!raw;
+    case 'choice':
+      return String(raw);
+    case 'index':
+      return Math.round(parseFloat(raw)) - 1;
+    case 'index_opt':
+      return String(raw).trim() === '' ? null : Math.round(parseFloat(raw)) - 1;
+    default:
+      return parseFloat(raw) * (ctrl.factor ?? 1);
   }
 }
 
 function PdfPreview({ title, src }: { title: string; src?: string }) {
   if (!src) return null;
   return (
-    <div className="preview-card">
-      <div className="preview-title">{title}</div>
+    <section className="preview-panel">
+      <div className="preview-topline">{title}</div>
       <iframe className="preview-frame" src={src} title={title} />
-    </div>
+    </section>
+  );
+}
+
+function Field({
+  ctrl,
+  value,
+  onChange,
+}: {
+  ctrl: Ctrl;
+  value: any;
+  onChange: (value: any) => void;
+}) {
+  if (ctrl.kind === 'bool') {
+    return (
+      <label className="toggle-field">
+        <input type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked)} />
+        <span className="toggle-copy">
+          <span className="field-label">{ctrl.label}</span>
+          {ctrl.hint && <span className="field-hint">{ctrl.hint}</span>}
+        </span>
+      </label>
+    );
+  }
+
+  return (
+    <label className="field-row">
+      <span className="field-copy">
+        <span className="field-label">{ctrl.label}</span>
+        {ctrl.hint && <span className="field-hint">{ctrl.hint}</span>}
+      </span>
+      <span className="field-input-wrap">
+        {ctrl.kind === 'choice' ? (
+          <select className="field-input field-select" value={value} onChange={(e) => onChange(e.target.value)}>
+            {ctrl.choices!.map((choice) => (
+              <option key={choice} value={choice}>
+                {choice}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input className="field-input" type="text" value={value} onChange={(e) => onChange(e.target.value)} />
+        )}
+      </span>
+    </label>
   );
 }
 
@@ -82,10 +149,10 @@ function Tab({ mode, ctrls }: { mode: 'glue' | 'punch'; ctrls: Ctrl[] }) {
   const [vals, setVals] = useState<Record<string, any>>(() => defaults(ctrls));
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
-  const [out, setOut] = useState<{ body?: string; cover?: string; text?: string; err?: string }>({});
+  const [out, setOut] = useState<OutputState>({});
   const [inputUrl, setInputUrl] = useState<string>();
 
-  const set = (g: string, v: any) => setVals(s => ({ ...s, [g]: v }));
+  const set = (group: string, value: any) => setVals((current) => ({ ...current, [group]: value }));
 
   useEffect(() => {
     if (!file) {
@@ -105,142 +172,229 @@ function Tab({ mode, ctrls }: { mode: 'glue' | 'punch'; ctrls: Ctrl[] }) {
   }, [out.body, out.cover]);
 
   async function run() {
-    if (!file) { setOut({ err: 'Choose an input PDF first.' }); return; }
-    setBusy(true); setOut({});
+    if (!file) {
+      setOut({ err: 'Choose an input PDF first.' });
+      return;
+    }
+
+    setBusy(true);
+    setOut({});
+
     try {
       const opts: any = { mode };
-      ctrls.forEach(c => (opts[c.g] = coerce(c, vals[c.g])));
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      const r = await impose(bytes, opts as ImposeOptions);
+      ctrls.forEach((ctrl) => {
+        opts[ctrl.g] = coerce(ctrl, vals[ctrl.g]);
+      });
 
-      const mk = (b: Uint8Array) => {
-        const pdfBytes = b.slice();
-        return URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }));
-      };
-      const s = r.summary;
-      const sp = s.spreads.length
-        ? `Spreads: ${s.spreads.length} split -> pages ${s.spreads.join(', ')}` +
-          (s.alignBlanks ? `\n         ${s.alignBlanks} alignment blank(s) inserted` : '')
-        : 'Spreads: none detected';
-      const text =
-        `Source: ${s.sourcePages} pages\n` + sp + '\n' +
-        `Layout: box ${(s.trimW / MM).toFixed(0)} x ${(s.trimH / MM).toFixed(0)} mm, ` +
-        `gutter ${(s.gutter / MM).toFixed(1)} mm, mode ${s.mode}\n` +
-        `Body: ${s.sheets} folded sheets (${s.sides} sheet sides, ${s.imposedPages} pages, ${s.blanks} blank)\n` +
-        (r.splashPage ? `Closing splash on body PDF page ${r.splashPage} (print in color)\n` : '') +
-        (mode === 'glue'
-          ? 'Print: odds, then evens REVERSED, short-edge flip. Fold, glue spine, stack-cut to box.'
-          : 'Print: odds, then evens REVERSED, short-edge flip. Fold, punch the two ticks, bind with fasteners.');
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const result = await impose(bytes, opts as ImposeOptions);
+      const toUrl = (chunk: Uint8Array) => URL.createObjectURL(new Blob([chunk.slice()], { type: 'application/pdf' }));
 
       if (out.body) URL.revokeObjectURL(out.body);
       if (out.cover) URL.revokeObjectURL(out.cover);
-      setOut({ body: mk(r.bodyBytes), cover: r.coverBytes ? mk(r.coverBytes) : undefined, text });
-    } catch (e: any) {
-      setOut({ err: e?.message || String(e) });
+
+      setOut({
+        body: toUrl(result.bodyBytes),
+        cover: result.coverBytes ? toUrl(result.coverBytes) : undefined,
+        summary: result.summary,
+        splashPage: result.splashPage,
+        mode,
+      });
+    } catch (error: any) {
+      setOut({ err: error?.message || String(error) });
     } finally {
       setBusy(false);
     }
   }
 
   const base = file ? file.name.replace(/\.pdf$/i, '') : 'booklet';
-
-  // group controls by section for headers
   const rows = useMemo(() => {
-    const out: { section?: string; items: Ctrl[] }[] = [];
-    let cur: { section?: string; items: Ctrl[] } | null = null;
-    for (const c of ctrls) {
-      if (c.section || !cur) { cur = { section: c.section, items: [] }; out.push(cur); }
-      cur.items.push(c);
+    const output: { section?: string; items: Ctrl[] }[] = [];
+    let current: { section?: string; items: Ctrl[] } | null = null;
+
+    for (const ctrl of ctrls) {
+      if (ctrl.section || !current) {
+        current = { section: ctrl.section, items: [] };
+        output.push(current);
+      }
+      current.items.push(ctrl);
     }
-    return out;
+
+    return output;
   }, [ctrls]);
 
   return (
-    <div className="panel">
-      <div className="filerow">
-        <label>Input PDF</label>
-        <input type="file" accept="application/pdf"
-          onChange={e => setFile(e.target.files?.[0] ?? null)} />
-      </div>
-
-      <PdfPreview title="Input preview" src={inputUrl} />
-
-      {rows.map((grp, i) => (
-        <div key={i}>
-          {grp.section && <div className="section-title">{grp.section}</div>}
-          <div className="grid">
-            {grp.items.map(c => (
-              <div key={c.g} className={'ctrl' + (c.kind === 'bool' ? ' bool' : '')}>
-                {c.kind === 'bool' ? (
-                  <>
-                    <input type="checkbox" checked={!!vals[c.g]}
-                      onChange={e => set(c.g, e.target.checked)} />
-                    <label>{c.label}</label>
-                  </>
-                ) : c.kind === 'choice' ? (
-                  <>
-                    <label>{c.label}</label>
-                    <select value={vals[c.g]} onChange={e => set(c.g, e.target.value)}>
-                      {c.choices!.map(o => <option key={o} value={o}>{o}</option>)}
-                    </select>
-                  </>
-                ) : (
-                  <>
-                    <label>{c.label}</label>
-                    <input type="text" value={vals[c.g]}
-                      onChange={e => set(c.g, e.target.value)} />
-                  </>
-                )}
-                {c.hint && <span className="hint">{c.hint}</span>}
-              </div>
-            ))}
+    <div className="workspace">
+      <section className="config-panel">
+        <div className="panel-head">
+          <div>
+            <div className="eyebrow">Setup</div>
+            <h2>Source and layout</h2>
           </div>
         </div>
-      ))}
 
-      <button className="run" onClick={run} disabled={busy}>
-        {busy ? 'Imposing…' : 'Impose booklet'}
-      </button>
-
-      {(out.text || out.err) && (
-        <div className="result">
-          {out.err
-            ? <p className="err">Error: {out.err}</p>
-            : <>
-                <h3>Done</h3>
-                <pre>{out.text}</pre>
-                <div className="downloads">
-                  <a className="dl" href={out.body} download={`${base}_booklet.pdf`}>Download body PDF</a>
-                  {out.cover && <a className="dl" href={out.cover} download={`${base}_cover.pdf`}>Download cover PDF</a>}
-                </div>
-                <div className="preview-grid">
-                  <PdfPreview title="Body preview" src={out.body} />
-                  <PdfPreview title="Cover preview" src={out.cover} />
-                </div>
-                <p className="note">Tip: print at 100% / actual size. Body grayscale, cover in color on photo paper.</p>
-              </>}
+        <div className="upload-row">
+          <div className="upload-copy">
+            <span className="field-label">Input PDF</span>
+            <span className="field-hint">{file ? file.name : 'No file selected'}</span>
+          </div>
+          <input
+            className="upload-input"
+            type="file"
+            accept="application/pdf"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          />
         </div>
-      )}
+
+        {rows.map((group, index) => (
+          <section key={index} className="control-section">
+            {group.section && <div className="section-kicker">{group.section}</div>}
+            <div className="field-grid">
+              {group.items.map((ctrl) => (
+                <Field key={ctrl.g} ctrl={ctrl} value={vals[ctrl.g]} onChange={(value) => set(ctrl.g, value)} />
+              ))}
+            </div>
+          </section>
+        ))}
+
+        <div className="action-bar">
+          <button className="run" onClick={run} disabled={busy}>
+            {busy ? 'Imposing...' : 'Impose booklet'}
+          </button>
+          <span className="action-note">{mode === 'glue' ? 'Glue binding' : 'Punch + fastener'}</span>
+        </div>
+      </section>
+
+      <section className="results-panel">
+        <div className="panel-head">
+          <div>
+            <div className="eyebrow">Output</div>
+            <h2>Preview and export</h2>
+          </div>
+        </div>
+
+        {out.err ? (
+          <div className="empty-state error-state">
+            <div className="empty-title">Could not impose this file</div>
+            <p>{out.err}</p>
+          </div>
+        ) : out.summary ? (
+          <>
+            <div className="metrics">
+              <div className="metric">
+                <span className="metric-value">{out.summary.sourcePages}</span>
+                <span className="metric-label">Source pages</span>
+              </div>
+              <div className="metric">
+                <span className="metric-value">{out.summary.sheets}</span>
+                <span className="metric-label">Folded sheets</span>
+              </div>
+              <div className="metric">
+                <span className="metric-value">{out.summary.spreads.length}</span>
+                <span className="metric-label">Detected spreads</span>
+              </div>
+              <div className="metric">
+                <span className="metric-value">{out.summary.blanks}</span>
+                <span className="metric-label">Blank pages</span>
+              </div>
+            </div>
+
+            <div className="summary-list">
+              <div className="summary-row">
+                <span>Layout</span>
+                <strong>
+                  {(out.summary.trimW / MM).toFixed(0)} x {(out.summary.trimH / MM).toFixed(0)} mm
+                </strong>
+              </div>
+              <div className="summary-row">
+                <span>Gutter</span>
+                <strong>{(out.summary.gutter / MM).toFixed(1)} mm</strong>
+              </div>
+              <div className="summary-row">
+                <span>Body PDF</span>
+                <strong>{out.summary.sides} sheet sides</strong>
+              </div>
+              <div className="summary-row">
+                <span>Spread pages</span>
+                <strong>{out.summary.spreads.length ? out.summary.spreads.join(', ') : 'None detected'}</strong>
+              </div>
+              {out.splashPage ? (
+                <div className="summary-row">
+                  <span>Closing splash</span>
+                  <strong>Body page {out.splashPage}</strong>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="downloads">
+              <a className="dl" href={out.body} download={`${base}_booklet.pdf`}>
+                Download body PDF
+              </a>
+              {out.cover ? (
+                <a className="dl secondary" href={out.cover} download={`${base}_cover.pdf`}>
+                  Download cover PDF
+                </a>
+              ) : null}
+            </div>
+
+            <div className="instruction-banner">
+              {out.mode === 'glue'
+                ? 'Print odds, then evens reversed, short-edge flip. Fold, glue spine, stack-cut to trim.'
+                : 'Print odds, then evens reversed, short-edge flip. Fold, punch the guide ticks, then fasten.'}
+            </div>
+
+            <div className="preview-stack">
+              <PdfPreview title="Input preview" src={inputUrl} />
+              <PdfPreview title="Body preview" src={out.body} />
+              <PdfPreview title="Cover preview" src={out.cover} />
+            </div>
+          </>
+        ) : (
+          <div className="empty-state">
+            <div className="empty-title">Ready for a source PDF</div>
+            <p>Load a book, tune the layout, and generate press-ready output with live previews.</p>
+            <PdfPreview title="Input preview" src={inputUrl} />
+          </div>
+        )}
+      </section>
     </div>
   );
 }
 
 export default function Page() {
   const [tab, setTab] = useState<'glue' | 'punch'>('glue');
+
   return (
-    <div className="wrap">
-      <h1>Manga Booklet Imposer</h1>
-      <p className="sub">
-        Right-to-left booklet imposition with automatic double-page-spread splitting.
-        Everything runs in your browser — your PDF never leaves your device.
-      </p>
-      <div className="tabs">
-        <div className={'tab' + (tab === 'glue' ? ' active' : '')} onClick={() => setTab('glue')}>Glue / Viz</div>
-        <div className={'tab' + (tab === 'punch' ? ' active' : '')} onClick={() => setTab('punch')}>Punch + Fastener</div>
-      </div>
-      {tab === 'glue'
-        ? <Tab key="glue" mode="glue" ctrls={GLUE} />
-        : <Tab key="punch" mode="punch" ctrls={PUNCH} />}
-    </div>
+    <main className="app-shell">
+      <header className="hero">
+        <div className="hero-copy">
+          <div className="eyebrow">Manga booklet imposer</div>
+          <h1>Prepare printable manga booklets without leaving the browser.</h1>
+          <p className="sub">
+            Right-to-left imposition with spread splitting, standalone covers, and print-oriented output for glue or
+            fastener binding.
+          </p>
+        </div>
+
+        <div className="mode-switch" role="tablist" aria-label="Binding mode">
+          <button
+            type="button"
+            className={'mode-tab' + (tab === 'glue' ? ' active' : '')}
+            onClick={() => setTab('glue')}
+          >
+            Glue / Viz
+          </button>
+          <button
+            type="button"
+            className={'mode-tab' + (tab === 'punch' ? ' active' : '')}
+            onClick={() => setTab('punch')}
+          >
+            Punch + Fastener
+          </button>
+        </div>
+      </header>
+
+      {tab === 'glue' ? <Tab key="glue" mode="glue" ctrls={GLUE} /> : <Tab key="punch" mode="punch" ctrls={PUNCH} />}
+    </main>
   );
 }
