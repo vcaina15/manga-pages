@@ -305,7 +305,7 @@ h2 {
 .results-meta {
   flex-shrink: 0;
   overflow-y: auto;
-  max-height: 280px;
+  max-height: 180px;
   scrollbar-width: thin;
   scrollbar-color: var(--line-strong) transparent;
 }
@@ -579,12 +579,12 @@ h2 {
 .metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .metric {
-  padding: 13px 12px;
+  padding: 8px 10px;
   background: var(--blue-soft);
   border: 1px solid rgba(74, 111, 165, 0.2);
   border-radius: 10px;
@@ -593,10 +593,10 @@ h2 {
 
 .metric-value {
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 3px;
   color: var(--text);
   font-family: var(--font-display);
-  font-size: 26px;
+  font-size: 20px;
   font-weight: 700;
   line-height: 1;
 }

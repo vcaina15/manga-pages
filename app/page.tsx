@@ -386,10 +386,9 @@ export default function Page() {
             <span className="wordmark-text">Manga Imposer</span>
           </div>
           <div className="hero-title-row">
-            <h1>Prepare printable manga booklets without leaving the browser.</h1>
+            <h1>Print-ready manga booklets — right in your browser.</h1>
             <p className="sub">
-              Right-to-left imposition with spread splitting, standalone covers, and print-oriented output for glue or
-              fastener binding.
+              RTL imposition, spread splitting, and standalone covers. Built for glue and fastener binding.
             </p>
           </div>
         </div>
