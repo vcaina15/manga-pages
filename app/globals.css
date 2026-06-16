@@ -828,6 +828,23 @@ h2 {
   color: var(--text);
 }
 
+.app-footer-author {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.app-footer-link {
+  color: var(--muted-light);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 120ms ease;
+}
+
+.app-footer-link:hover {
+  color: var(--accent-vivid);
+}
+
 .app-footer-badge {
   font-family: var(--font-display);
   font-size: 11px;

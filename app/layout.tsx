@@ -3,7 +3,7 @@ import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Manga Booklet Imposer',
+  title: 'Manga Pages',
   description: 'RTL booklet imposition with spread splitting — runs in your browser.',
 };
 

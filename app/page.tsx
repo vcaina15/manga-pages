@@ -383,7 +383,7 @@ export default function Page() {
                 <line x1="6" y1="11" x2="13" y2="11" stroke="rgba(0,0,0,0.25)" strokeWidth="0.75"/>
               </svg>
             </span>
-            <span className="wordmark-text">Manga Imposer</span>
+            <span className="wordmark-text">Manga Pages</span>
           </div>
           <div className="hero-title-row">
             <h1>Print-ready manga booklets — right in your browser.</h1>
@@ -419,6 +419,16 @@ export default function Page() {
         <p className="app-footer-copy">
           All processing runs locally in your browser — no files are uploaded.
           Built for manga collectors and DIY bookbinders.
+        </p>
+        <p className="app-footer-author">
+          Authored by{' '}
+          <a className="app-footer-link" href="https://github.com/vcaina15" target="_blank" rel="noopener noreferrer">
+            vcaina15
+          </a>
+          {' '}·{' '}
+          <a className="app-footer-link" href="https://github.com/vcaina15/manga-pages" target="_blank" rel="noopener noreferrer">
+            View on GitHub
+          </a>
         </p>
         <span className="app-footer-badge">綴じる — Bind &amp; Print</span>
       </footer>
