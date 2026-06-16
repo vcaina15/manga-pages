@@ -304,10 +304,6 @@ h2 {
 
 .results-meta {
   flex-shrink: 0;
-  overflow-y: auto;
-  max-height: 180px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
 }
 
 /* ── Panel Head ───────────────────────────────────────────────── */
