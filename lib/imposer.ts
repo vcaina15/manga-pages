@@ -17,6 +17,7 @@ export interface ImposeOptions {
   bleed?: number; maxEdgeCrop?: number;
   // shared
   gutter: number; vOffset: number;
+  pagesPerSig?: number;
   splitSpreads: boolean; spreadDetectAspect: number;
   coverAsSeparate: boolean; coverSrcIndex: number;
   backCoverSrcIndex: number | null; appendCoverEnd: boolean;
@@ -67,7 +68,8 @@ function buildSequence(sizes: Array<{ w: number; h: number }>, o: ImposeOptions)
     }
   }
   const beforePad = seq.length;
-  while (seq.length % 4 !== 0) seq.push({ kind: 'blank' });
+  const sigSize = o.pagesPerSig ?? 4;
+  while (seq.length % sigSize !== 0) seq.push({ kind: 'blank' });
   stats.padBlanks = seq.length - beforePad;
 
   let coverPos: number | null = null;
@@ -79,12 +81,22 @@ function buildSequence(sizes: Array<{ w: number; h: number }>, o: ImposeOptions)
   return { seq, stats, coverPos };
 }
 
-// RTL single-sheet signatures: side A = [p0|p3], side B = [p2|p1] (left|right)
-function rtlSheets(total: number): SheetLayout[] {
+// RTL imposition for any signature size (pagesPerSig must be a multiple of 4).
+// For a signature of sheetsInSig physical sheets (= pagesPerSig pages), sheet i:
+//   Side A: left = start + 2i,              right = start + pagesPerSig - 1 - 2i
+//   Side B: left = start + pagesPerSig - 2 - 2i,  right = start + 2i + 1
+function rtlSheets(total: number, pagesPerSig: number): SheetLayout[] {
   const sheets: SheetLayout[] = [];
-  for (let s = 0; s < total; s += 4) {
-    const p = [0, 1, 2, 3].map(i => (s + i < total ? s + i : null));
-    sheets.push([[p[0], p[3]], [p[2], p[1]]]);
+  const sheetsInSig = pagesPerSig / 4;
+  const slot = (n: number): SheetSlot => (n < total ? n : null);
+  for (let start = 0; start < total; start += pagesPerSig) {
+    for (let i = 0; i < sheetsInSig; i++) {
+      const aL = start + 2 * i;
+      const aR = start + pagesPerSig - 1 - 2 * i;
+      const bL = start + pagesPerSig - 2 - 2 * i;
+      const bR = start + 2 * i + 1;
+      sheets.push([[slot(aL), slot(aR)], [slot(bL), slot(bR)]]);
+    }
   }
   return sheets;
 }
@@ -181,7 +193,8 @@ function drawGuides(page, S) {
 }
 
 export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promise<ImposeResult> {
-  const o = { sheetW: 842, sheetH: 595, ...opts };
+  const pagesPerSig = Math.max(4, Math.round(Number(opts.pagesPerSig ?? 4) / 4) * 4);
+  const o = { sheetW: 842, sheetH: 595, ...opts, pagesPerSig };
   const src = await PDFDocument.load(inputBytes);
   const n = src.getPageCount();
   const sizes = src.getPages().map(p => ({ w: p.getWidth(), h: p.getHeight() }));
@@ -225,7 +238,7 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
   const body = await PDFDocument.create();
   const bodyCache = new Map();
   let splashPage: number | null = null;
-  const sheets = rtlSheets(padded);
+  const sheets = rtlSheets(padded, pagesPerSig);
   for (const [[aL, aR], [bL, bR]] of sheets) {
     for (const [lpos, rpos] of [[aL, aR], [bL, bR]]) {
       const page = body.addPage([S.sheetW, S.sheetH]);
@@ -266,7 +279,7 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
   return {
     bodyBytes, coverBytes, splashPage,
     summary: {
-      sourcePages: n, sheets: padded / 4, sides, imposedPages: padded,
+      sourcePages: n, sheets: padded / pagesPerSig, sides, imposedPages: padded,
       blanks: stats.padBlanks + stats.alignBlanks,
       spreads: stats.spreads, alignBlanks: stats.alignBlanks,
       trimW: S.trimW ?? 0, trimH: effTrimH, gutter: S.gutter, mode: o.mode,

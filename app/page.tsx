@@ -26,6 +26,7 @@ type OutputState = {
 };
 
 const GLUE: Ctrl[] = [
+  { g: 'pagesPerSig', label: 'Pages per signature', kind: 'choice', def: '4', choices: ['4', '8', '12', '16'], hint: 'sheets nested per group', section: 'Signature' },
   { g: 'trimW', label: 'Trim width', kind: 'float', def: 127, factor: MM, hint: 'mm', section: 'Page & fit' },
   { g: 'trimH', label: 'Trim height', kind: 'float', def: 190, factor: MM, hint: 'mm' },
   { g: 'matchPageAspect', label: 'Match page aspect', kind: 'bool', def: true, hint: 'Auto height from source pages' },
@@ -53,6 +54,7 @@ const GLUE: Ctrl[] = [
 ];
 
 const PUNCH: Ctrl[] = [
+  { g: 'pagesPerSig', label: 'Pages per signature', kind: 'choice', def: '4', choices: ['4', '8', '12', '16'], hint: 'sheets nested per group', section: 'Signature' },
   { g: 'gutter', label: 'Gutter', kind: 'float', def: 1.5, factor: INCH, hint: 'in', section: 'Layout' },
   { g: 'bleed', label: 'Bleed', kind: 'float', def: 0.04, factor: INCH, hint: 'in' },
   { g: 'maxEdgeCrop', label: 'Max edge crop', kind: 'float', def: 0, factor: INCH, hint: 'in' },
@@ -243,7 +245,9 @@ function Tab({ mode, ctrls }: { mode: 'glue' | 'punch'; ctrls: Ctrl[] }) {
         </div>
 
         <div className="tool-notice">
-          This tool uses single-sheet signatures only: 4 imposed pages per folded sheet.
+          {vals['pagesPerSig'] === '4'
+            ? 'Single-sheet signatures: 1 folded sheet per group, 4 pages.'
+            : `${vals['pagesPerSig']}-page signatures: ${Number(vals['pagesPerSig']) / 4} sheets nested per group, fold innermost first.`}
         </div>
 
         {rows.map((group, index) => (
