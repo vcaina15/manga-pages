@@ -93,7 +93,7 @@ button {
 .app-shell {
   max-width: 1480px;
   margin: 0 auto;
-  padding: 32px 28px 72px;
+  padding: 12px 28px 72px;
 }
 
 /* ── Hero / Sticky Header ─────────────────────────────────────── */
@@ -282,8 +282,8 @@ h2 {
 .config-panel {
   padding: 22px 22px 20px;
   position: sticky;
-  top: calc(var(--hero-h) + 12px);
-  max-height: calc(100vh - var(--hero-h) - 44px);
+  top: calc(var(--hero-h) + 8px);
+  max-height: calc(100vh - var(--hero-h) - 16px);
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--line-strong) transparent;
@@ -305,8 +305,8 @@ h2 {
 .results-panel {
   padding: 22px;
   position: sticky;
-  top: calc(var(--hero-h) + 12px);
-  height: calc(100vh - var(--hero-h) - 44px);
+  top: calc(var(--hero-h) + 8px);
+  height: calc(100vh - var(--hero-h) - 16px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
