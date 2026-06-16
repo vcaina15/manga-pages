@@ -368,8 +368,9 @@ export default function Page() {
   const [tab, setTab] = useState<'glue' | 'punch'>('glue');
 
   return (
-    <main className="app-shell">
-      <header className="hero">
+    <>
+    <header className="hero">
+      <div className="hero-inner">
         <div className="hero-copy">
           <div className="wordmark">
             <span className="wordmark-glyph" aria-hidden="true">
@@ -409,8 +410,10 @@ export default function Page() {
             Punch + Fastener
           </button>
         </div>
-      </header>
+      </div>
+    </header>
 
+    <main className="app-shell">
       {tab === 'glue' ? <Tab key="glue" mode="glue" ctrls={GLUE} /> : <Tab key="punch" mode="punch" ctrls={PUNCH} />}
 
       <footer className="app-footer">
@@ -421,5 +424,6 @@ export default function Page() {
         <span className="app-footer-badge">綴じる — Bind &amp; Print</span>
       </footer>
     </main>
+    </>
   );
 }
