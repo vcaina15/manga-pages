@@ -284,6 +284,7 @@ h2 {
   position: sticky;
   top: calc(var(--hero-h) + 8px);
   max-height: calc(100vh - var(--hero-h) - 16px);
+  min-height: 820px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--line-strong) transparent;
@@ -307,6 +308,7 @@ h2 {
   position: sticky;
   top: calc(var(--hero-h) + 8px);
   height: calc(100vh - var(--hero-h) - 16px);
+  min-height: 820px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
