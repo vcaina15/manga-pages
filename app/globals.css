@@ -516,30 +516,31 @@ h2 {
   position: sticky;
   bottom: 0;
   z-index: 10;
+  margin: 24px -22px -20px;
+  padding: 14px 22px 18px;
+  background:
+    linear-gradient(to bottom, transparent 0%, var(--bg-elevated) 28%);
   display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-top: 20px;
-  padding-top: 20px;
-  padding-bottom: 8px;
-  background: linear-gradient(to bottom, transparent 0%, var(--bg-elevated) 35%);
+  flex-direction: column;
+  gap: 10px;
 }
 
 /* ── Run Button ───────────────────────────────────────────────── */
 
 .run {
   position: relative;
+  width: 100%;
   border: 0;
   border-radius: 10px;
   background: var(--accent);
   color: white;
-  padding: 11px 22px;
+  padding: 13px 22px;
   font-family: var(--font-ui);
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
   cursor: pointer;
-  box-shadow: 0 4px 18px var(--accent-glow);
+  box-shadow: 0 4px 20px var(--accent-glow);
   transition: background 160ms ease, box-shadow 160ms ease, transform 100ms ease;
   overflow: hidden;
 }
@@ -548,13 +549,13 @@ h2 {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 60%);
+  background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 55%);
   pointer-events: none;
 }
 
 .run:hover:not(:disabled) {
   background: var(--accent-strong);
-  box-shadow: 0 6px 24px var(--accent-glow);
+  box-shadow: 0 6px 28px var(--accent-glow);
   transform: translateY(-1px);
 }
 
@@ -569,8 +570,11 @@ h2 {
 }
 
 .action-note {
+  text-align: center;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 /* ── Metrics ──────────────────────────────────────────────────── */
