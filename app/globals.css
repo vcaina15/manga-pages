@@ -111,12 +111,10 @@ button {
   background:
     linear-gradient(
       180deg,
-      rgba(22, 18, 16, 0.98) 0%,
-      rgba(22, 18, 16, 0.94) 72%,
+      rgba(22, 18, 16, 1) 0%,
+      rgba(22, 18, 16, 0.97) 75%,
       rgba(22, 18, 16, 0) 100%
     );
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 }
 
 .hero-copy {
