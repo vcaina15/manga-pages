@@ -1,21 +1,46 @@
-# Manga Booklet Imposer (web)
+# Manga Pages
 
-Right-to-left booklet imposition with automatic double-page-spread splitting,
-as a Next.js web app. **All processing runs client-side in the browser** via
-`pdf-lib` — your PDF is never uploaded anywhere, and there's no backend, so it
-deploys to Vercel's free tier as a plain static-ish Next.js app.
+**Turn any manga PDF into a print-ready booklet — right in your browser.**
 
-Two modes, each with every control exposed:
+No uploads. No backend. No account. Just open the page, drop your PDF, and download a press-ready imposed booklet in seconds.
 
-- **Glue / Viz** — fixed trim box (default 127×190 mm Viz), `MATCH_PAGE_ASPECT`,
-  `fit`/`fill` with `FILL_ZOOM`, glue-sized gutter, trim box + crop-mark guides,
-  landscape rotate/fit-width.
-- **Punch + Fastener** — fill-the-cell sizing, 1.5″ fastener gutter, bleed +
-  max-edge-crop, fold line + two punch ticks at your spacing.
+Built by [vcaina15](https://github.com/vcaina15) · [Live app](https://manga-pages.vercel.app) · MIT License
 
-Both auto-detect spreads (a page wider than `SPREAD_DETECT_ASPECT`), split them
-into a facing pair, and insert an alignment blank when needed so the halves face.
-The cover is pulled into its own PDF.
+---
+
+## What it does
+
+Manga Pages reorders your source PDF pages into the correct right-to-left signature order for physical booklet printing. It handles the math so you don't have to.
+
+- **Automatic spread detection** — wide double-page spreads are split and paired correctly
+- **Two binding modes** — Glue / Viz for perfect-bound or saddle-stitch, Punch + Fastener for ring or screw-post binding
+- **Standalone cover PDF** — front and back cover pulled into a separate sheet
+- **Configurable signatures** — 4, 8, 12, or 16 pages per signature
+- **Print guides** — fold/cut lines, trim boxes, and crop marks baked in
+- **100% client-side** — `pdf-lib` runs entirely in your browser; your files never leave your device
+
+---
+
+## Modes
+
+### Glue / Viz
+Fixed trim box (default 127 × 190 mm Viz Media size). Controls for fit/fill, fill zoom, landscape handling, and per-sheet signatures. Outputs a body PDF and a cover PDF ready for fold-and-glue binding.
+
+### Punch + Fastener
+Full-bleed cell sizing with a 1.5″ gutter for ring or screw-post fasteners. Controls for bleed, max edge crop, and punch guide spacing.
+
+---
+
+## How to print
+
+1. Load your manga PDF and click **Impose booklet**
+2. Download the **body PDF** and (if enabled) the **cover PDF**
+3. Print at **100% / actual size** — do not scale to fit
+4. **Body:** print odds first, then evens in reverse order, short-edge flip (duplex)
+5. **Cover:** print on photo paper or card stock, color if available
+6. Fold, then glue the spine and stack-cut to trim — or punch the guide ticks and fasten
+
+---
 
 ## Run locally
 
@@ -27,34 +52,24 @@ npm run dev
 
 ## Deploy to Vercel (free)
 
-Option A — Git:
-1. Push this folder to a GitHub repo.
-2. In Vercel, "Add New… → Project", import the repo.
-3. Framework preset is auto-detected as **Next.js**. Leave defaults. Deploy.
+**Option A — Git (recommended):**
+1. Push to a GitHub repo
+2. In Vercel, click **Add New → Project** and import the repo
+3. Framework is auto-detected as Next.js — leave defaults and deploy
 
-Option B — CLI:
+**Option B — CLI:**
 ```bash
 npm i -g vercel
-vercel        # follow prompts; accept Next.js defaults
-vercel --prod # promote to production
+vercel
+vercel --prod
 ```
 
-No environment variables, no serverless functions, nothing to configure — the
-imposition is pure client-side JS.
+No environment variables, no serverless functions, nothing to configure.
 
-## How to use
-
-1. Pick a tab (Glue or Punch).
-2. Choose your input PDF.
-3. Adjust controls (units are noted on each field: mm, in, cm, or unitless).
-4. Click **Impose booklet** → download the body PDF (and the cover PDF).
-5. Print at **100% / actual size**. Body grayscale; cover in color on photo
-   paper. Print odds, then evens **reversed**, short-edge flip. Then fold and
-   bind (glue + stack-cut, or punch + fasteners).
+---
 
 ## Notes
 
-- Large volumes (150+ pages) take a few seconds to process in the browser; the
-  button shows "Imposing…" while it works.
-- Next is pinned to 14.2.5 for a stable Vercel build.
-- The imposition logic lives in `lib/imposer.ts` and is framework-agnostic.
+- Large volumes (150+ pages) take a few seconds — the button shows "Imposing…" while it works
+- Imposition logic lives in `lib/imposer.ts` and is framework-agnostic
+- Next.js is pinned to 14.2.5 for a stable Vercel build
