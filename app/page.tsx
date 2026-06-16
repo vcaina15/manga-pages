@@ -226,8 +226,8 @@ function Tab({ mode, ctrls }: { mode: 'glue' | 'punch'; ctrls: Ctrl[] }) {
       <section className="config-panel">
         <div className="panel-head">
           <div>
-            <div className="eyebrow">Setup</div>
-            <h2>Source and layout</h2>
+            <div className="eyebrow">Configure</div>
+            <h2>Source &amp; layout</h2>
           </div>
         </div>
 
@@ -247,7 +247,7 @@ function Tab({ mode, ctrls }: { mode: 'glue' | 'punch'; ctrls: Ctrl[] }) {
         <div className="tool-notice">
           {vals['pagesPerSig'] === '4'
             ? 'Single-sheet signatures: 1 folded sheet per group, 4 pages.'
-            : `${vals['pagesPerSig']}-page signatures: ${Number(vals['pagesPerSig']) / 4} sheets nested per group, fold innermost first.`}
+            : `${vals['pagesPerSig']}-page signatures: ${Number(vals['pagesPerSig']) / 4} sheets nested per group — fold innermost first.`}
         </div>
 
         {rows.map((group, index) => (
@@ -263,7 +263,7 @@ function Tab({ mode, ctrls }: { mode: 'glue' | 'punch'; ctrls: Ctrl[] }) {
 
         <div className="action-bar">
           <button className="run" onClick={run} disabled={busy}>
-            {busy ? 'Imposing...' : 'Impose booklet'}
+            {busy ? 'Imposing…' : 'Impose booklet'}
           </button>
           <span className="action-note">{mode === 'glue' ? 'Glue binding' : 'Punch + fastener'}</span>
         </div>
@@ -273,7 +273,7 @@ function Tab({ mode, ctrls }: { mode: 'glue' | 'punch'; ctrls: Ctrl[] }) {
         <div className="panel-head">
           <div>
             <div className="eyebrow">Output</div>
-            <h2>Preview and export</h2>
+            <h2>Preview &amp; export</h2>
           </div>
         </div>
 
@@ -323,7 +323,7 @@ function Tab({ mode, ctrls }: { mode: 'glue' | 'punch'; ctrls: Ctrl[] }) {
         ) : (
           <div className="empty-state">
             <div className="empty-title">Ready for a source PDF</div>
-            <p>Load a book, tune the layout, and generate press-ready output with live previews.</p>
+            <p>Load a manga PDF, tune the layout, and generate press-ready output with a live preview.</p>
           </div>
         )}
 
@@ -371,7 +371,19 @@ export default function Page() {
     <main className="app-shell">
       <header className="hero">
         <div className="hero-copy">
-          <div className="eyebrow">Manga booklet imposer</div>
+          <div className="wordmark">
+            <span className="wordmark-glyph" aria-hidden="true">
+              {/* Book spine icon */}
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="3" y="2" width="2" height="14" rx="1" fill="white" opacity="0.9"/>
+                <rect x="6" y="2" width="9" height="14" rx="1.5" fill="white" opacity="0.7"/>
+                <line x1="6" y1="5" x2="15" y2="5" stroke="rgba(0,0,0,0.25)" strokeWidth="0.75"/>
+                <line x1="6" y1="8" x2="15" y2="8" stroke="rgba(0,0,0,0.25)" strokeWidth="0.75"/>
+                <line x1="6" y1="11" x2="13" y2="11" stroke="rgba(0,0,0,0.25)" strokeWidth="0.75"/>
+              </svg>
+            </span>
+            <span className="wordmark-text">Manga Imposer</span>
+          </div>
           <div className="hero-title-row">
             <h1>Prepare printable manga booklets without leaving the browser.</h1>
             <p className="sub">
@@ -400,6 +412,14 @@ export default function Page() {
       </header>
 
       {tab === 'glue' ? <Tab key="glue" mode="glue" ctrls={GLUE} /> : <Tab key="punch" mode="punch" ctrls={PUNCH} />}
+
+      <footer className="app-footer">
+        <p className="app-footer-copy">
+          All processing runs locally in your browser — no files are uploaded.
+          Built for manga collectors and DIY bookbinders.
+        </p>
+        <span className="app-footer-badge">綴じる — Bind &amp; Print</span>
+      </footer>
     </main>
   );
 }
