@@ -261,9 +261,9 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
     const cov = await PDFDocument.create();
     const cache = new Map();
     const page = cov.addPage([S.sheetW, S.sheetH]);
-    const spineW = o.mode === 'glue' && o.coverSpineW != null ? o.coverSpineW : S.gutter;
+    const spineW = o.mode === 'glue' && o.coverSpineW != null ? o.coverSpineW : 0;
     const covS = o.mode === 'glue'
-      ? { ...S, fitMode: o.coverFitMode ?? S.fitMode, fillZoom: o.coverFillZoom ?? S.fillZoom, gutter: spineW }
+      ? { ...S, fitMode: o.coverFitMode ?? S.fitMode, fillZoom: o.coverFillZoom ?? S.fillZoom, gutter: S.gutter + spineW }
       : S;
     const coverPlace = o.mode === 'glue' ? placeGlue : placePunch;
     // RTL cover: front on left half, back on right half (fold at center spine)
