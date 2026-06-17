@@ -22,7 +22,7 @@ type OutputState = {
   err?: string;
   summary?: ImposeResult['summary'];
   splashPage?: number | null;
-  mode?: 'glue' | 'punch';
+  mode?: 'glue' | 'punch' | 'a5';
 };
 
 const GLUE: Ctrl[] = [
@@ -52,6 +52,13 @@ const GLUE: Ctrl[] = [
   { g: 'cropMarkGap', label: 'Crop mark gap', kind: 'float', def: 1.5, factor: MM, hint: 'mm' },
   { g: 'guideGray', label: 'Guide gray', kind: 'float', def: 0.6, factor: 1, hint: '0..1' },
   { g: 'guideWidth', label: 'Guide width', kind: 'float', def: 0.5, factor: 1, hint: 'pt' },
+];
+
+const A5: Ctrl[] = [
+  { g: 'gutter', label: 'Gutter', kind: 'float', def: 10, factor: MM, hint: 'mm — binding margin, alternates sides per page', section: 'Layout' },
+  { g: 'vOffset', label: 'Vertical offset', kind: 'float', def: 0, factor: MM, hint: 'mm' },
+  { g: 'splitSpreads', label: 'Split spreads', kind: 'bool', def: true, hint: 'Detect and split wide pages', section: 'Spreads' },
+  { g: 'spreadDetectAspect', label: 'Spread detect aspect', kind: 'float', def: 1.2, factor: 1, hint: 'w/h cutoff' },
 ];
 
 const PUNCH: Ctrl[] = [
@@ -141,7 +148,7 @@ function Field({
   );
 }
 
-function Tab({ mode, ctrls }: { mode: 'glue' | 'punch'; ctrls: Ctrl[] }) {
+function Tab({ mode, ctrls }: { mode: 'glue' | 'punch' | 'a5'; ctrls: Ctrl[] }) {
   const [vals, setVals] = useState<Record<string, any>>(() => defaults(ctrls));
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
@@ -366,7 +373,7 @@ function Tab({ mode, ctrls }: { mode: 'glue' | 'punch'; ctrls: Ctrl[] }) {
 }
 
 export default function Page() {
-  const [tab, setTab] = useState<'glue' | 'punch'>('glue');
+  const [tab, setTab] = useState<'glue' | 'punch' | 'a5'>('glue');
 
   return (
     <>
@@ -409,12 +416,19 @@ export default function Page() {
           >
             Punch + Fastener
           </button>
+          <button
+            type="button"
+            className={'mode-tab' + (tab === 'a5' ? ' active' : '')}
+            onClick={() => setTab('a5')}
+          >
+            A5 Single
+          </button>
         </div>
       </div>
     </header>
 
     <main className="app-shell">
-      {tab === 'glue' ? <Tab key="glue" mode="glue" ctrls={GLUE} /> : <Tab key="punch" mode="punch" ctrls={PUNCH} />}
+      {tab === 'glue' ? <Tab key="glue" mode="glue" ctrls={GLUE} /> : tab === 'punch' ? <Tab key="punch" mode="punch" ctrls={PUNCH} /> : <Tab key="a5" mode="a5" ctrls={A5} />}
 
       <footer className="app-footer">
         <p className="app-footer-copy">

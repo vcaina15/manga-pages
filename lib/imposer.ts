@@ -6,7 +6,7 @@ export const CM = 72 / 2.54;
 export const INCH = 72;
 
 export interface ImposeOptions {
-  mode: 'glue' | 'punch';
+  mode: 'glue' | 'punch' | 'a5';
   sheetW?: number; sheetH?: number;
   // glue
   trimW?: number; trimH?: number; matchPageAspect?: boolean;
@@ -195,6 +195,69 @@ function drawGuides(page, S) {
 }
 
 export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promise<ImposeResult> {
+  // A5 single-page mode: one source page per sheet, gutter alternates sides for RTL print-odds-evens
+  if (opts.mode === 'a5') {
+    const A5W = opts.sheetW ?? (5.8 * INCH);
+    const A5H = opts.sheetH ?? (8.3 * INCH);
+    const gutter = opts.gutter;
+    const vOffset = opts.vOffset ?? 0;
+    const o5 = {
+      ...opts, sheetW: A5W, sheetH: A5H, pagesPerSig: 1,
+      coverAsSeparate: false, appendCoverEnd: false,
+      coverSrcIndex: 0, backCoverSrcIndex: null,
+      splitSpreads: opts.splitSpreads ?? true,
+      spreadDetectAspect: opts.spreadDetectAspect ?? 1.2,
+    };
+    const src = await PDFDocument.load(inputBytes);
+    const n = src.getPageCount();
+    const sizes = src.getPages().map(p => ({ w: p.getWidth(), h: p.getHeight() }));
+    const { seq, stats } = buildSequence(sizes, o5);
+    const body = await PDFDocument.create();
+    const cache = new Map();
+    async function embedA5(item) {
+      const key = item.kind === 'half' ? `h${item.idx}${item.which}` : `p${item.idx}`;
+      if (cache.has(key)) return cache.get(key);
+      const sp = src.getPage(item.idx);
+      const { w, h } = sizes[item.idx];
+      let emb;
+      if (item.kind === 'half') {
+        const clip = item.which === 'right'
+          ? { left: w / 2, bottom: 0, right: w, top: h }
+          : { left: 0, bottom: 0, right: w / 2, top: h };
+        emb = await body.embedPage(sp, clip);
+      } else {
+        emb = await body.embedPage(sp);
+      }
+      cache.set(key, emb);
+      return emb;
+    }
+    for (let i = 0; i < seq.length; i++) {
+      const item = seq[i];
+      const page = body.addPage([A5W, A5H]);
+      if (item.kind === 'blank') continue;
+      const emb = await embedA5(item);
+      const contentW = A5W - gutter;
+      const scale = Math.min(contentW / emb.width, A5H / emb.height);
+      const nw = emb.width * scale, nh = emb.height * scale;
+      const ty = (A5H - nh) / 2 + vOffset;
+      // Odd pages (1,3,5…): gutter on right → content anchored left
+      // Even pages (2,4,6…): gutter on left → content anchored right
+      const isOdd = (i % 2 === 0);
+      const tx = isOdd ? 0 : gutter;
+      page.drawPage(emb, { x: tx, y: ty, xScale: scale, yScale: scale });
+    }
+    const bodyBytes = await body.save();
+    return {
+      bodyBytes, coverBytes: null, splashPage: null,
+      summary: {
+        sourcePages: n, sheets: seq.length, sides: seq.length,
+        imposedPages: seq.length, blanks: stats.padBlanks + stats.alignBlanks,
+        spreads: stats.spreads, alignBlanks: stats.alignBlanks,
+        trimW: 0, trimH: 0, gutter, mode: 'a5',
+      },
+    };
+  }
+
   const pagesPerSig = Math.max(4, Math.round(Number(opts.pagesPerSig ?? 4) / 4) * 4);
   const o = { sheetW: 842, sheetH: 595, ...opts, pagesPerSig };
   const src = await PDFDocument.load(inputBytes);
