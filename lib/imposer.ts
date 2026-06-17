@@ -11,7 +11,7 @@ export interface ImposeOptions {
   // glue
   trimW?: number; trimH?: number; matchPageAspect?: boolean;
   fitMode?: 'fit' | 'fill'; fillZoom?: number;
-  coverFitMode?: 'fit' | 'fill'; coverFillZoom?: number; coverSpineW?: number;
+  coverFitMode?: 'fit' | 'fill'; coverFillZoom?: number; coverSpineW?: number; coverTrimW?: number;
   landscapeMode?: 'rotate' | 'fit_width' | 'none'; landscapeRotate?: 'cw' | 'ccw';
   // punch
   bleed?: number; maxEdgeCrop?: number;
@@ -263,7 +263,16 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
     const page = cov.addPage([S.sheetW, S.sheetH]);
     const spineW = o.mode === 'glue' && o.coverSpineW != null ? o.coverSpineW : 0;
     const covS = o.mode === 'glue'
-      ? { ...S, fitMode: o.coverFitMode ?? S.fitMode, fillZoom: o.coverFillZoom ?? S.fillZoom, gutter: S.gutter + spineW }
+      ? {
+          ...S,
+          fitMode: o.coverFitMode ?? S.fitMode,
+          fillZoom: o.coverFillZoom ?? S.fillZoom,
+          gutter: S.gutter + spineW,
+          trimW: o.coverTrimW ?? S.trimW,
+          effTrimH: o.coverTrimW != null
+            ? (S.effTrimH / (S.trimW ?? 1)) * o.coverTrimW
+            : S.effTrimH,
+        }
       : S;
     const coverPlace = o.mode === 'glue' ? placeGlue : placePunch;
     // RTL cover: front on left half, back on right half (fold at center spine)
