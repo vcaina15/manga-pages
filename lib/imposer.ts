@@ -142,7 +142,9 @@ function placeGlue(page, emb, half, S) {
     : Math.max(b.w / tw, b.h / th) * S.fillZoom;
   const nw = tw * scale, nh = th * scale;
   const ty = b.y0 + (b.h - nh) / 2;
-  const tx = half === 'left' ? b.x1 - nw : b.x0;
+  const tx = S.centerFit
+    ? b.x0 + (b.w - nw) / 2
+    : half === 'left' ? b.x1 - nw : b.x0;
   page.drawPage(emb, { x: tx, y: ty, xScale: scale, yScale: scale });
 }
 
@@ -263,7 +265,7 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
     const page = cov.addPage([S.sheetW, S.sheetH]);
     const spineW = o.mode === 'glue' && o.coverSpineW != null ? o.coverSpineW : 0;
     const covS = o.mode === 'glue'
-      ? { ...S, fitMode: o.coverFitMode ?? S.fitMode, fillZoom: o.coverFillZoom ?? S.fillZoom, gutter: S.gutter + spineW }
+      ? { ...S, fitMode: o.coverFitMode ?? S.fitMode, fillZoom: o.coverFillZoom ?? S.fillZoom, gutter: S.gutter + spineW, centerFit: true }
       : S;
     const coverPlace = o.mode === 'glue' ? placeGlue : placePunch;
     const front = await embedFor(cov, { kind: 'page', idx: o.coverSrcIndex }, cache);
