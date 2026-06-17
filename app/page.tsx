@@ -40,7 +40,6 @@ const GLUE: Ctrl[] = [
   { g: 'landscapeRotate', label: 'Landscape rotate', kind: 'choice', def: 'cw', choices: ['cw', 'ccw'] },
   { g: 'coverAsSeparate', label: 'Separate cover', kind: 'bool', def: true, hint: 'Generate a standalone cover PDF', section: 'Cover' },
   { g: 'coverSpineW', label: 'Spine width', kind: 'float', def: 13, factor: MM, hint: 'mm — measured with calipers after printing body' },
-  { g: 'coverTrimW', label: 'Cover trim width', kind: 'float', def: 0, factor: MM, hint: 'mm — 0 = auto fill to sheet edge' },
   { g: 'coverFitMode', label: 'Cover fit mode', kind: 'choice', def: 'fill', choices: ['fit', 'fill'], hint: 'Cover sheet only' },
   { g: 'coverFillZoom', label: 'Cover fill zoom', kind: 'float', def: 1.02, factor: 1, hint: 'Cover fill only' },
   { g: 'coverSrcIndex', label: 'Front cover page #', kind: 'index', def: 1, hint: '1-based' },
