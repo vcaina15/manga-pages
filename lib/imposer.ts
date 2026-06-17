@@ -11,7 +11,7 @@ export interface ImposeOptions {
   // glue
   trimW?: number; trimH?: number; matchPageAspect?: boolean;
   fitMode?: 'fit' | 'fill'; fillZoom?: number;
-  coverFitMode?: 'fit' | 'fill'; coverFillZoom?: number;
+  coverFitMode?: 'fit' | 'fill'; coverFillZoom?: number; coverSpineW?: number;
   landscapeMode?: 'rotate' | 'fit_width' | 'none'; landscapeRotate?: 'cw' | 'ccw';
   // punch
   bleed?: number; maxEdgeCrop?: number;
@@ -261,10 +261,12 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
     const cov = await PDFDocument.create();
     const cache = new Map();
     const page = cov.addPage([S.sheetW, S.sheetH]);
+    const spineW = o.mode === 'glue' && o.coverSpineW != null ? o.coverSpineW : S.gutter;
     const covS = o.mode === 'glue'
-      ? { ...S, fitMode: o.coverFitMode ?? S.fitMode, fillZoom: o.coverFillZoom ?? S.fillZoom }
+      ? { ...S, fitMode: o.coverFitMode ?? S.fitMode, fillZoom: o.coverFillZoom ?? S.fillZoom, gutter: spineW }
       : S;
     const coverPlace = o.mode === 'glue' ? placeGlue : placePunch;
+    // RTL cover: front on left half, back on right half (fold at center spine)
     const front = await embedFor(cov, { kind: 'page', idx: o.coverSrcIndex }, cache);
     coverPlace(page, front, 'left', covS);
     if (o.backCoverSrcIndex !== null && o.backCoverSrcIndex !== undefined) {
@@ -272,6 +274,13 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
       coverPlace(page, back, 'right', covS);
     }
     drawGuides(page, S);
+    // Draw spine fold guides when spine width is set
+    if (o.mode === 'glue' && o.coverSpineW != null && S.drawGuides) {
+      const g = rgb(S.guideGray, S.guideGray, S.guideGray);
+      const cx = S.sheetW / 2;
+      page.drawLine({ start: { x: cx - spineW / 2, y: 0 }, end: { x: cx - spineW / 2, y: S.sheetH }, thickness: S.guideWidth, color: g });
+      page.drawLine({ start: { x: cx + spineW / 2, y: 0 }, end: { x: cx + spineW / 2, y: S.sheetH }, thickness: S.guideWidth, color: g });
+    }
     coverBytes = await cov.save();
   }
 
