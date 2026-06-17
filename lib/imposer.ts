@@ -266,16 +266,16 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
       ? { ...S, fitMode: o.coverFitMode ?? S.fitMode, fillZoom: o.coverFillZoom ?? S.fillZoom, gutter: S.gutter + spineW }
       : S;
     const coverPlace = o.mode === 'glue' ? placeGlue : placePunch;
-    // RTL cover: front on left half, back on right half (fold at center spine)
     const front = await embedFor(cov, { kind: 'page', idx: o.coverSrcIndex }, cache);
     coverPlace(page, front, 'left', covS);
     if (o.backCoverSrcIndex !== null && o.backCoverSrcIndex !== undefined) {
       const back = await embedFor(cov, { kind: 'page', idx: o.backCoverSrcIndex }, cache);
       coverPlace(page, back, 'right', covS);
     }
-    drawGuides(page, S);
-    // Draw spine fold guides when spine width is set
-    if (o.mode === 'glue' && o.coverSpineW != null && S.drawGuides) {
+    // Use covS for guides so trim boxes reflect the wider cover gutter.
+    // Suppress the fold line — spine guides replace it.
+    drawGuides(page, { ...covS, foldCutLine: false });
+    if (spineW > 0 && S.drawGuides) {
       const g = rgb(S.guideGray, S.guideGray, S.guideGray);
       const cx = S.sheetW / 2;
       page.drawLine({ start: { x: cx - spineW / 2, y: 0 }, end: { x: cx - spineW / 2, y: S.sheetH }, thickness: S.guideWidth, color: g });
