@@ -262,16 +262,18 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
     const cache = new Map();
     const page = cov.addPage([S.sheetW, S.sheetH]);
     const spineW = o.mode === 'glue' && o.coverSpineW != null ? o.coverSpineW : 0;
+    const covGutter = S.gutter + spineW;
+    // Default cover trim width fills half the sheet minus half the center gap
+    const autoCoverTrimW = S.sheetW / 2 - covGutter / 2;
+    const covTrimW = o.coverTrimW != null && o.coverTrimW > 0 ? o.coverTrimW : autoCoverTrimW;
     const covS = o.mode === 'glue'
       ? {
           ...S,
-          fitMode: o.coverFitMode ?? S.fitMode,
-          fillZoom: o.coverFillZoom ?? S.fillZoom,
-          gutter: S.gutter + spineW,
-          trimW: o.coverTrimW ?? S.trimW,
-          effTrimH: o.coverTrimW != null
-            ? (S.effTrimH / (S.trimW ?? 1)) * o.coverTrimW
-            : S.effTrimH,
+          fitMode: o.coverFitMode ?? 'fill',
+          fillZoom: o.coverFillZoom ?? 1.0,
+          gutter: covGutter,
+          trimW: covTrimW,
+          effTrimH: S.sheetH,
         }
       : S;
     const coverPlace = o.mode === 'glue' ? placeGlue : placePunch;
