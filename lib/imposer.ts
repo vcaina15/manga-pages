@@ -245,11 +245,6 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
         xScale: scale, yScale: scale,
       });
     }
-    const coverFontSize = Math.min(gutter * 0.55, 9);
-    const coverAnnotX = (A5W - gutter) + (gutter - coverFontSize) / 2;
-    const gray0 = rgb(0.5, 0.5, 0.5);
-    coverPage.drawText('C',  { x: coverAnnotX, y: A5H - coverFontSize - 4, size: coverFontSize, color: gray0 });
-    coverPage.drawText('-',  { x: coverAnnotX, y: 6,                        size: coverFontSize, color: gray0 });
     for (let i = 1; i < seq.length; i++) {
       const item = seq[i];
       const page = body.addPage([A5W, A5H]);
