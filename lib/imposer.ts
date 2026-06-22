@@ -232,24 +232,29 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
       cache.set(key, emb);
       return emb;
     }
-    // First sheet is the cover — goes into its own PDF, no gutter annotations
+    // First sheet is the cover — separate PDF, right gutter (same as odd body sheets)
     const coverItem = seq[0];
+    const coverPage = cover.addPage([A5W, A5H]);
     if (coverItem && coverItem.kind !== 'blank') {
-      const coverPage = cover.addPage([A5W, A5H]);
       const emb = await embedA5(coverItem, cover);
-      const scale = Math.min(A5W / emb.width, A5H / emb.height);
+      const contentW = A5W - gutter;
+      const scale = Math.min(contentW / emb.width, A5H / emb.height);
       const nw = emb.width * scale, nh = emb.height * scale;
       coverPage.drawPage(emb, {
-        x: (A5W - nw) / 2, y: (A5H - nh) / 2 + vOffset,
+        x: 0, y: (A5H - nh) / 2 + vOffset,
         xScale: scale, yScale: scale,
       });
-    } else {
-      cover.addPage([A5W, A5H]);
     }
+    const coverFontSize = Math.min(gutter * 0.55, 9);
+    const coverAnnotX = (A5W - gutter) + (gutter - coverFontSize) / 2;
+    const gray0 = rgb(0.5, 0.5, 0.5);
+    coverPage.drawText('C',  { x: coverAnnotX, y: A5H - coverFontSize - 4, size: coverFontSize, color: gray0 });
+    coverPage.drawText('-',  { x: coverAnnotX, y: 6,                        size: coverFontSize, color: gray0 });
     for (let i = 1; i < seq.length; i++) {
       const item = seq[i];
       const page = body.addPage([A5W, A5H]);
-      const isOdd = (i % 2 === 0);
+      const bodyIdx = i - 1; // body-local index: 0 = first body sheet
+      const isOdd = (bodyIdx % 2 === 0);
 
       if (item.kind !== 'blank') {
         const emb = await embedA5(item, body);
@@ -257,15 +262,15 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
         const scale = Math.min(contentW / emb.width, A5H / emb.height);
         const nh = emb.height * scale;
         const ty = (A5H - nh) / 2 + vOffset;
-        // Odd pages (1,3,5…): gutter on right → content anchored left
-        // Even pages (2,4,6…): gutter on left → content anchored right
+        // Odd sheets (1,3,5…): gutter on right → content anchored left
+        // Even sheets (2,4,6…): gutter on left → content anchored right
         const tx = isOdd ? 0 : gutter;
         page.drawPage(emb, { x: tx, y: ty, xScale: scale, yScale: scale });
       }
 
       // Gutter annotations on every sheet (including blanks): page number at top, +/- marker at bottom
       const marker = isOdd ? '-' : '+';
-      const pageLabel = String(i + 1);
+      const pageLabel = String(bodyIdx + 1);
       const fontSize = Math.min(gutter * 0.55, 9);
       const gutterLeft = isOdd ? A5W - gutter : 0;
       const annotX = gutterLeft + (gutter - fontSize) / 2;
