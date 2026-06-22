@@ -234,23 +234,24 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
     for (let i = 0; i < seq.length; i++) {
       const item = seq[i];
       const page = body.addPage([A5W, A5H]);
-      if (item.kind === 'blank') continue;
-      const emb = await embedA5(item);
-      const contentW = A5W - gutter;
-      const scale = Math.min(contentW / emb.width, A5H / emb.height);
-      const nw = emb.width * scale, nh = emb.height * scale;
-      const ty = (A5H - nh) / 2 + vOffset;
-      // Odd pages (1,3,5…): gutter on right → content anchored left
-      // Even pages (2,4,6…): gutter on left → content anchored right
       const isOdd = (i % 2 === 0);
-      const tx = isOdd ? 0 : gutter;
-      page.drawPage(emb, { x: tx, y: ty, xScale: scale, yScale: scale });
 
-      // Gutter annotations: page number at top, +/- marker at bottom
+      if (item.kind !== 'blank') {
+        const emb = await embedA5(item);
+        const contentW = A5W - gutter;
+        const scale = Math.min(contentW / emb.width, A5H / emb.height);
+        const nh = emb.height * scale;
+        const ty = (A5H - nh) / 2 + vOffset;
+        // Odd pages (1,3,5…): gutter on right → content anchored left
+        // Even pages (2,4,6…): gutter on left → content anchored right
+        const tx = isOdd ? 0 : gutter;
+        page.drawPage(emb, { x: tx, y: ty, xScale: scale, yScale: scale });
+      }
+
+      // Gutter annotations on every sheet (including blanks): page number at top, +/- marker at bottom
       const marker = isOdd ? '-' : '+';
       const pageLabel = String(i + 1);
       const fontSize = Math.min(gutter * 0.55, 9);
-      // Odd pages: gutter strip is on the right. Even pages: gutter strip is on the left.
       const gutterLeft = isOdd ? A5W - gutter : 0;
       const annotX = gutterLeft + (gutter - fontSize) / 2;
       const gray = rgb(0.5, 0.5, 0.5);
