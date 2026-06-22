@@ -213,8 +213,9 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
     const sizes = src.getPages().map(p => ({ w: p.getWidth(), h: p.getHeight() }));
     const { seq, stats } = buildSequence(sizes, o5);
     const body = await PDFDocument.create();
+    const cover = await PDFDocument.create();
     const cache = new Map();
-    async function embedA5(item) {
+    async function embedA5(item, doc) {
       const key = item.kind === 'half' ? `h${item.idx}${item.which}` : `p${item.idx}`;
       if (cache.has(key)) return cache.get(key);
       const sp = src.getPage(item.idx);
@@ -224,20 +225,34 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
         const clip = item.which === 'right'
           ? { left: w / 2, bottom: 0, right: w, top: h }
           : { left: 0, bottom: 0, right: w / 2, top: h };
-        emb = await body.embedPage(sp, clip);
+        emb = await doc.embedPage(sp, clip);
       } else {
-        emb = await body.embedPage(sp);
+        emb = await doc.embedPage(sp);
       }
       cache.set(key, emb);
       return emb;
     }
-    for (let i = 0; i < seq.length; i++) {
+    // First sheet is the cover — goes into its own PDF, no gutter annotations
+    const coverItem = seq[0];
+    if (coverItem && coverItem.kind !== 'blank') {
+      const coverPage = cover.addPage([A5W, A5H]);
+      const emb = await embedA5(coverItem, cover);
+      const scale = Math.min(A5W / emb.width, A5H / emb.height);
+      const nw = emb.width * scale, nh = emb.height * scale;
+      coverPage.drawPage(emb, {
+        x: (A5W - nw) / 2, y: (A5H - nh) / 2 + vOffset,
+        xScale: scale, yScale: scale,
+      });
+    } else {
+      cover.addPage([A5W, A5H]);
+    }
+    for (let i = 1; i < seq.length; i++) {
       const item = seq[i];
       const page = body.addPage([A5W, A5H]);
       const isOdd = (i % 2 === 0);
 
       if (item.kind !== 'blank') {
-        const emb = await embedA5(item);
+        const emb = await embedA5(item, body);
         const contentW = A5W - gutter;
         const scale = Math.min(contentW / emb.width, A5H / emb.height);
         const nh = emb.height * scale;
@@ -259,8 +274,9 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
       page.drawText(marker,    { x: annotX, y: 6,                   size: fontSize, color: gray });
     }
     const bodyBytes = await body.save();
+    const coverBytes = await cover.save();
     return {
-      bodyBytes, coverBytes: null, splashPage: null,
+      bodyBytes, coverBytes, splashPage: null,
       summary: {
         sourcePages: n, sheets: seq.length, sides: seq.length,
         imposedPages: seq.length, blanks: stats.padBlanks + stats.alignBlanks,
