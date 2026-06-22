@@ -252,7 +252,7 @@ function Tab({ mode, ctrls }: { mode: 'glue' | 'punch' | 'a5'; ctrls: Ctrl[] }) 
           />
         </div>
 
-        {tab !== 'a5' && (
+        {mode !== 'a5' && (
           <div className="tool-notice">
             {vals['pagesPerSig'] === '4'
               ? 'Single-sheet signatures: 1 folded sheet per group, 4 pages.'
