@@ -245,6 +245,17 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
       const isOdd = (i % 2 === 0);
       const tx = isOdd ? 0 : gutter;
       page.drawPage(emb, { x: tx, y: ty, xScale: scale, yScale: scale });
+
+      // Gutter annotations: page number at top, +/- marker at bottom
+      const marker = isOdd ? '-' : '+';
+      const pageLabel = String(i + 1);
+      const fontSize = Math.min(gutter * 0.55, 9);
+      // Odd pages: gutter strip is on the right. Even pages: gutter strip is on the left.
+      const gutterLeft = isOdd ? A5W - gutter : 0;
+      const annotX = gutterLeft + (gutter - fontSize) / 2;
+      const gray = rgb(0.5, 0.5, 0.5);
+      page.drawText(pageLabel, { x: annotX, y: A5H - fontSize - 4, size: fontSize, color: gray });
+      page.drawText(marker,    { x: annotX, y: 6,                   size: fontSize, color: gray });
     }
     const bodyBytes = await body.save();
     return {
