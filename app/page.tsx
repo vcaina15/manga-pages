@@ -252,11 +252,13 @@ function Tab({ mode, ctrls }: { mode: 'glue' | 'punch' | 'a5'; ctrls: Ctrl[] }) 
           />
         </div>
 
-        <div className="tool-notice">
-          {vals['pagesPerSig'] === '4'
-            ? 'Single-sheet signatures: 1 folded sheet per group, 4 pages.'
-            : `${vals['pagesPerSig']}-page signatures: ${Number(vals['pagesPerSig']) / 4} sheets nested per group — fold innermost first.`}
-        </div>
+        {tab !== 'a5' && (
+          <div className="tool-notice">
+            {vals['pagesPerSig'] === '4'
+              ? 'Single-sheet signatures: 1 folded sheet per group, 4 pages.'
+              : `${vals['pagesPerSig']}-page signatures: ${Number(vals['pagesPerSig']) / 4} sheets nested per group — fold innermost first.`}
+          </div>
+        )}
 
         {rows.map((group, index) => (
           <section key={index} className="control-section">
