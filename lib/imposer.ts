@@ -18,7 +18,7 @@ export interface ImposeOptions {
   // shared
   gutter: number; vOffset: number;
   pagesPerSig?: number;
-  splitSpreads: boolean; spreadDetectAspect: number;
+  splitSpreads: boolean; spreadDetectAspect: number; skipSpreadAlign?: boolean;
   coverAsSeparate: boolean; coverSrcIndex: number;
   backCoverSrcIndex: number | null; appendCoverEnd: boolean;
   // guides
@@ -59,7 +59,7 @@ function buildSequence(sizes: Array<{ w: number; h: number }>, o: ImposeOptions)
   for (let idx = bodyFirst; idx < sizes.length; idx++) {
     const { w, h } = sizes[idx];
     if (o.splitSpreads && h > 0 && w / h >= o.spreadDetectAspect) {
-      if ((seq.length + 1) % 2 === 1) { seq.push({ kind: 'blank' }); stats.alignBlanks++; }
+      if (!o.skipSpreadAlign && (seq.length + 1) % 2 === 1) { seq.push({ kind: 'blank' }); stats.alignBlanks++; }
       seq.push({ kind: 'half', idx, which: 'right' });
       seq.push({ kind: 'half', idx, which: 'left' });
       stats.spreads.push(idx + 1);
@@ -207,6 +207,7 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
       coverSrcIndex: 0, backCoverSrcIndex: null,
       splitSpreads: opts.splitSpreads ?? true,
       spreadDetectAspect: opts.spreadDetectAspect ?? 1.2,
+      skipSpreadAlign: true,
     };
     const src = await PDFDocument.load(inputBytes);
     const n = src.getPageCount();
