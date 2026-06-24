@@ -173,7 +173,7 @@ function drawGuides(page, S) {
   if (!S.drawGuides) return;
   const g = rgb(S.guideGray, S.guideGray, S.guideGray);
   const cx = S.sheetW / 2;
-  if (S.foldCutLine)
+  if (S.foldCutLine || S.mode === 'punch')
     page.drawLine({ start: { x: cx, y: 0 }, end: { x: cx, y: S.sheetH }, thickness: S.guideWidth, color: g });
   if (S.mode === 'glue' && S.trimGuides) {
     for (const half of ['left', 'right']) {
@@ -367,8 +367,8 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
       coverPlace(page, back, 'right', covS);
     }
     // Use covS for guides so trim boxes reflect the wider cover gutter.
-    // Suppress the fold line — spine guides replace it.
-    drawGuides(page, { ...covS, foldCutLine: false });
+    // For glue mode, suppress the fold line — spine guides replace it.
+    drawGuides(page, { ...covS, foldCutLine: o.mode === 'glue' ? false : covS.foldCutLine });
     if (spineW > 0 && S.drawGuides) {
       const g = rgb(S.guideGray, S.guideGray, S.guideGray);
       const cx = S.sheetW / 2;
