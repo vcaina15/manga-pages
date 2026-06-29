@@ -71,6 +71,7 @@ const PUNCH: Ctrl[] = [
   { g: 'splitSpreads', label: 'Split spreads', kind: 'bool', def: true, hint: 'Detect and split wide pages', section: 'Spreads' },
   { g: 'spreadDetectAspect', label: 'Spread detect aspect', kind: 'float', def: 1.2, factor: 1, hint: 'w/h cutoff' },
   { g: 'coverAsSeparate', label: 'Separate cover', kind: 'bool', def: true, hint: 'Generate a standalone cover PDF', section: 'Cover' },
+  { g: 'coverRTL', label: 'Cover RTL', kind: 'bool', def: true, hint: 'Uncheck for LTR books' },
   { g: 'coverSrcIndex', label: 'Front cover page #', kind: 'index', def: 1, hint: '1-based' },
   { g: 'backCoverSrcIndex', label: 'Back cover page #', kind: 'index_opt', def: '', hint: 'Blank leaves it empty' },
   { g: 'appendCoverEnd', label: 'Append end splash', kind: 'bool', def: false },

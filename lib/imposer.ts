@@ -14,7 +14,7 @@ export interface ImposeOptions {
   coverFitMode?: 'fit' | 'fill'; coverFillZoom?: number; coverSpineW?: number;
   landscapeMode?: 'rotate' | 'fit_width' | 'none'; landscapeRotate?: 'cw' | 'ccw';
   // punch
-  bleed?: number; maxEdgeCrop?: number;
+  bleed?: number; maxEdgeCrop?: number; coverRTL?: boolean;
   // shared
   gutter: number; vOffset: number; rtl?: boolean;
   pagesPerSig?: number;
@@ -363,11 +363,14 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
       ? { ...S, fitMode: o.coverFitMode ?? S.fitMode, fillZoom: o.coverFillZoom ?? S.fillZoom, gutter: S.gutter + spineW, centerFit: true }
       : S;
     const coverPlace = o.mode === 'glue' ? placeGlue : placePunch;
+    const coverRTL = o.coverRTL !== false;
+    const frontSide = coverRTL ? 'left' : 'right';
+    const backSide  = coverRTL ? 'right' : 'left';
     const front = await embedFor(cov, { kind: 'page', idx: o.coverSrcIndex }, cache);
-    coverPlace(page, front, 'left', covS);
+    coverPlace(page, front, frontSide, covS);
     if (o.backCoverSrcIndex !== null && o.backCoverSrcIndex !== undefined) {
       const back = await embedFor(cov, { kind: 'page', idx: o.backCoverSrcIndex }, cache);
-      coverPlace(page, back, 'right', covS);
+      coverPlace(page, back, backSide, covS);
     }
     // Use covS for guides so trim boxes reflect the wider cover gutter.
     // For glue mode, suppress the fold line — spine guides replace it.
