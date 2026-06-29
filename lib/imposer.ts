@@ -269,7 +269,9 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
       const marker = isOdd ? '-' : '+';
       const pageLabel = String(bodyIdx + 1);
       const fontSize = Math.min(gutter * 0.55, 9);
-      const gutterLeft = isOdd ? A5W - gutter : 0;
+      const rtl2 = opts.rtl !== false;
+      const contentOnLeft = (isOdd === rtl2);
+      const gutterLeft = contentOnLeft ? A5W - gutter : 0;
       const annotX = gutterLeft + (gutter - fontSize) / 2;
       const gray = rgb(0.5, 0.5, 0.5);
       page.drawText(pageLabel, { x: annotX, y: A5H - fontSize - 4, size: fontSize, color: gray });
