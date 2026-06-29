@@ -16,7 +16,7 @@ export interface ImposeOptions {
   // punch
   bleed?: number; maxEdgeCrop?: number;
   // shared
-  gutter: number; vOffset: number;
+  gutter: number; vOffset: number; rtl?: boolean;
   pagesPerSig?: number;
   splitSpreads: boolean; spreadDetectAspect: number; skipSpreadAlign?: boolean;
   coverAsSeparate: boolean; coverSrcIndex: number;
@@ -258,9 +258,10 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
         const scale = Math.min(contentW / emb.width, A5H / emb.height);
         const nh = emb.height * scale;
         const ty = (A5H - nh) / 2 + vOffset;
-        // Odd sheets (1,3,5…): gutter on right → content anchored left
-        // Even sheets (2,4,6…): gutter on left → content anchored right
-        const tx = isOdd ? 0 : gutter;
+        // RTL: odd=gutter right (tx=0), even=gutter left (tx=gutter)
+        // LTR: odd=gutter left (tx=gutter), even=gutter right (tx=0)
+        const rtl = opts.rtl !== false;
+        const tx = (isOdd === rtl) ? 0 : gutter;
         page.drawPage(emb, { x: tx, y: ty, xScale: scale, yScale: scale });
       }
 
