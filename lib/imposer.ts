@@ -1,5 +1,5 @@
 // Manga booklet imposer — pdf-lib port (client-side capable).
-import { PDFDocument, rgb, degrees } from 'pdf-lib';
+import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
 
 export const MM = 72 / 25.4;
 export const CM = 72 / 2.54;
@@ -17,6 +17,7 @@ export interface ImposeOptions {
   bleed?: number; maxEdgeCrop?: number; coverRTL?: boolean;
   // shared
   gutter: number; vOffset: number; rtl?: boolean;
+  contentScale?: number; showPageNumbers?: boolean;
   pagesPerSig?: number;
   splitSpreads: boolean; spreadDetectAspect: number; skipSpreadAlign?: boolean;
   coverAsSeparate: boolean; coverSrcIndex: number;
@@ -216,6 +217,9 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
     const body = await PDFDocument.create();
     const cover = await PDFDocument.create();
     const cache = new Map();
+    const font = await body.embedFont(StandardFonts.Helvetica);
+    const contentScale = opts.contentScale ?? 1.0;
+    const showPageNumbers = opts.showPageNumbers !== false;
     async function embedA5(item, doc) {
       const key = item.kind === 'half' ? `h${item.idx}${item.which}` : `p${item.idx}`;
       if (cache.has(key)) return cache.get(key);
@@ -252,30 +256,37 @@ export async function impose(inputBytes: Uint8Array, opts: ImposeOptions): Promi
       const bodyIdx = i - 1; // body-local index: 0 = first body sheet
       const isOdd = (bodyIdx % 2 === 0);
 
+      const rtl = opts.rtl !== false;
+      const contentOnLeft = (isOdd === rtl);
+      const tx0 = contentOnLeft ? 0 : gutter;
+
       if (item.kind !== 'blank') {
         const emb = await embedA5(item, body);
         const contentW = A5W - gutter;
-        const scale = Math.min(contentW / emb.width, A5H / emb.height);
-        const nh = emb.height * scale;
+        const fitScale = Math.min(contentW / emb.width, A5H / emb.height) * contentScale;
+        const nw = emb.width * fitScale, nh = emb.height * fitScale;
         const ty = (A5H - nh) / 2 + vOffset;
-        // RTL: odd=gutter right (tx=0), even=gutter left (tx=gutter)
-        // LTR: odd=gutter left (tx=gutter), even=gutter right (tx=0)
-        const rtl = opts.rtl !== false;
-        const tx = (isOdd === rtl) ? 0 : gutter;
-        page.drawPage(emb, { x: tx, y: ty, xScale: scale, yScale: scale });
+        // center within the content area
+        const tx = tx0 + (contentW - nw) / 2;
+        page.drawPage(emb, { x: tx, y: ty, xScale: fitScale, yScale: fitScale });
       }
 
-      // Gutter annotations on every sheet (including blanks): page number at top, +/- marker at bottom
+      // Gutter marker (tiny, in gutter strip)
       const marker = isOdd ? '-' : '+';
       const pageLabel = String(bodyIdx + 1);
-      const fontSize = Math.min(gutter * 0.55, 9);
-      const rtl2 = opts.rtl !== false;
-      const contentOnLeft = (isOdd === rtl2);
+      const gutterFontSize = Math.min(gutter * 0.55, 9);
       const gutterLeft = contentOnLeft ? A5W - gutter : 0;
-      const annotX = gutterLeft + (gutter - fontSize) / 2;
+      const annotX = gutterLeft + (gutter - gutterFontSize) / 2;
       const gray = rgb(0.5, 0.5, 0.5);
-      page.drawText(pageLabel, { x: annotX, y: A5H - fontSize - 4, size: fontSize, color: gray });
-      page.drawText(marker,    { x: annotX, y: 6,                   size: fontSize, color: gray });
+      page.drawText(marker, { x: annotX, y: 6, size: gutterFontSize, color: gray, font });
+
+      // Centered page number at bottom
+      if (showPageNumbers) {
+        const pnSize = 9;
+        const pnText = pageLabel;
+        const pnWidth = font.widthOfTextAtSize(pnText, pnSize);
+        page.drawText(pnText, { x: (A5W - pnWidth) / 2, y: 14, size: pnSize, color: gray, font });
+      }
     }
     const bodyBytes = await body.save();
     const coverBytes = await cover.save();

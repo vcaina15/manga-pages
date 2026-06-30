@@ -57,7 +57,9 @@ const GLUE: Ctrl[] = [
 const A5: Ctrl[] = [
   { g: 'rtl', label: 'Right-to-left', kind: 'bool', def: true, hint: 'Disable for LTR books (novels, epub)', section: 'Layout' },
   { g: 'gutter', label: 'Gutter', kind: 'float', def: 10, factor: MM, hint: 'mm — binding margin, alternates sides per page' },
+  { g: 'contentScale', label: 'Content scale', kind: 'float', def: 1.0, factor: 1, hint: 'Zoom content (>1 crops edges, useful for small fonts)' },
   { g: 'vOffset', label: 'Vertical offset', kind: 'float', def: 0, factor: MM, hint: 'mm' },
+  { g: 'showPageNumbers', label: 'Page numbers', kind: 'bool', def: true, hint: 'Print page number at bottom center', section: 'Annotations' },
   { g: 'splitSpreads', label: 'Split spreads', kind: 'bool', def: true, hint: 'Detect and split wide pages', section: 'Spreads' },
   { g: 'spreadDetectAspect', label: 'Spread detect aspect', kind: 'float', def: 1.2, factor: 1, hint: 'w/h cutoff' },
 ];
